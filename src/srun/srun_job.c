@@ -673,8 +673,7 @@ static void _post_opts(list_t *opt_list)
 		list_sort(opt_list, _sort_by_offset);
 }
 
-extern void init_srun(int argc, char **argv, log_options_t *logopt,
-		      bool handle_signals)
+extern void init_srun(int argc, char **argv, log_options_t *logopt)
 {
 	bool het_job_fini = false;
 	int i, het_job_argc, het_job_argc_off;
@@ -684,10 +683,9 @@ extern void init_srun(int argc, char **argv, log_options_t *logopt,
 	 * This must happen before we spawn any threads
 	 * which are not designed to handle arbitrary signals
 	 */
-	if (handle_signals) {
-		if (xsignal_block(sig_array) < 0)
-			error("Unable to block signals");
-	}
+	if (xsignal_block(sig_array) < 0)
+		error("Unable to block signals");
+
 	xsignal_block(pty_sigarray);
 
 	/*

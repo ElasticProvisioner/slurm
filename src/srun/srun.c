@@ -185,7 +185,7 @@ int srun(int ac, char **av)
 
 	_setup_env_working_cluster();
 
-	init_srun(ac, av, &logopt, 1);
+	init_srun(ac, av, &logopt);
 	if (opt_list) {
 		if (!_enable_het_job_steps())
 			fatal("Job steps that span multiple components of a heterogeneous job are not currently supported");
