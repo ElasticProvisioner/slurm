@@ -62,9 +62,9 @@
 #include "src/interfaces/auth.h"
 #include "src/interfaces/gres.h"
 
-#include "allocate.h"
-#include "opt.h"
-#include "launch.h"
+#include "src/srun/allocate.h"
+#include "src/srun/launch.h"
+#include "src/srun/opt.h"
 
 #define MAX_ALLOC_WAIT	60	/* seconds */
 #define MIN_ALLOC_WAIT	5	/* seconds */
