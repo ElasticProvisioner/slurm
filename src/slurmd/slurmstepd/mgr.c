@@ -1143,8 +1143,7 @@ static void _x11_signal_handler(conmgr_callback_args_t conmgr_args, void *ignore
 		if ((_need_join_container()) &&
 		    (namespace_g_join(&step->step_id, step->uid, false) !=
 		     SLURM_SUCCESS)) {
-			error("%s: cannot join container",
-			      __func__);
+			error("%s: cannot join namespace", __func__);
 			_exit(1);
 		}
 		_shutdown_x11_forward();
