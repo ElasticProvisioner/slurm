@@ -167,7 +167,7 @@ extern slurm_step_ctx_t *step_ctx_create_timeout(
 	step_req->port = port;
 
 	rc = slurm_job_step_create(step_req, &step_resp);
-	if ((rc < 0) && launch_common_step_retry_errno(errno)) {
+	if ((rc < 0) && launch_step_retry_errno(errno)) {
 		START_TIMER;
 		errnum = errno;
 		fds.fd = sock;

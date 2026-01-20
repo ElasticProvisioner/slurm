@@ -264,7 +264,7 @@ static void *_launch_one_app(void *data)
 	slurm_step_launch_callbacks_t step_callbacks;
 
 	memset(&step_callbacks, 0, sizeof(step_callbacks));
-	step_callbacks.step_signal = launch_g_fwd_signal;
+	step_callbacks.step_signal = launch_fwd_signal;
 
 	/*
 	 * Run pre-launch once for entire hetjob
@@ -294,11 +294,11 @@ static void *_launch_one_app(void *data)
 		opt_local->argv[0] = xstrdup(opt_local->srun_opt->bcast_file);
 	}
 relaunch:
-	launch_common_set_stdio_fds(job, &cio_fds, opt_local);
+	launch_set_stdio_fds(job, &cio_fds, opt_local);
 
-	if (!launch_g_step_launch(job, &cio_fds, &global_rc, &step_callbacks,
-				  opt_local)) {
-		if (launch_g_step_wait(job, got_alloc, opt_local) == -1)
+	if (!launch_step_launch(job, &cio_fds, &global_rc, &step_callbacks,
+				opt_local)) {
+		if (launch_step_wait(job, got_alloc, opt_local) == -1)
 			goto relaunch;
 		if (job->step_ctx->launch_state->ret_code > mpi_plugin_rc)
 			mpi_plugin_rc = job->step_ctx->launch_state->ret_code;

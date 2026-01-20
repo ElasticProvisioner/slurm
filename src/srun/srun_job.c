@@ -941,8 +941,7 @@ static int _create_job_step(srun_job_t *job, bool use_all_cpus,
 				step_id = job->step_id.step_id;
 			if (exclude_hl) {
 				slurm_step_layout_t *step_layout =
-					launch_common_get_slurm_step_layout(
-						job);
+					launch_get_slurm_step_layout(job);
 				hostlist_push(exclude_hl,
 					      step_layout->node_list);
 			}
@@ -1632,7 +1631,7 @@ job_force_termination(srun_job_t *job)
 		info("forcing job termination");
 		/* Send SIGKILL to tasks directly */
 		update_job_state(job, SRUN_JOB_CANCELLED);
-		launch_g_fwd_signal(SIGKILL);
+		launch_fwd_signal(SIGKILL);
 	} else {
 		time_t now = time(NULL);
 		if (last_msg != now) {
@@ -1783,7 +1782,7 @@ static int _call_spank_local_user(srun_job_t *job, slurm_opt_t *opt_local)
 	info->gid	= opt_local->gid;
 	info->jobid	= job->step_id.job_id;
 	info->stepid	= job->step_id.step_id;
-	info->step_layout = launch_common_get_slurm_step_layout(job);
+	info->step_layout = launch_get_slurm_step_layout(job);
 	info->uid	= opt_local->uid;
 
 	return spank_local_user(info);
@@ -1809,15 +1808,15 @@ static void _handle_intr(srun_job_t *job)
 	gettimeofday(&now, NULL);
 	if (sropt.quit_on_intr || _diff_tv_str(&last_intr, &now) < 1000000) {
 		info("sending Ctrl-C to %ps", &job->step_id);
-		launch_g_fwd_signal(SIGINT);
+		launch_fwd_signal(SIGINT);
 		job_force_termination(job);
 	} else {
 		if (sropt.disable_status) {
 			info("sending Ctrl-C to %ps", &job->step_id);
-			launch_g_fwd_signal(SIGINT);
+			launch_fwd_signal(SIGINT);
 		} else if (job->state < SRUN_JOB_CANCELLED) {
 			info("interrupt (one more within 1 sec to abort)");
-			launch_g_print_status();
+			launch_print_status();
 		}
 		last_intr = now;
 	}
@@ -1830,7 +1829,7 @@ static void _handle_pipe(void)
 	if (ending)
 		return;
 	ending = 1;
-	launch_g_fwd_signal(SIGKILL);
+	launch_fwd_signal(SIGKILL);
 }
 
 
@@ -2262,7 +2261,7 @@ static void *_srun_signal_mgr(void *job_ptr)
 			 * are ending the job now and we don't need to update
 			 * the state. */
 			info("forcing job termination");
-			launch_g_fwd_signal(SIGKILL);
+			launch_fwd_signal(SIGKILL);
 			break;
 		case SIGCONT:
 			info("got SIGCONT");
@@ -2273,12 +2272,12 @@ static void *_srun_signal_mgr(void *job_ptr)
 		case SIGALRM:
 			if (srun_max_timer) {
 				info("First task exited %ds ago", sropt.max_wait);
-				launch_g_print_status();
-				launch_g_step_terminate();
+				launch_print_status();
+				launch_step_terminate();
 			}
 			break;
 		default:
-			launch_g_fwd_signal(sig);
+			launch_fwd_signal(sig);
 			break;
 		}
 	}
