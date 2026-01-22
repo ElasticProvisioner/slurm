@@ -547,6 +547,8 @@
 #define serialize_g_data_to_string slurm_serialize_g_data_to_string
 #define serialize_g_string_to_data slurm_serialize_g_string_to_data
 #define serializer_g_fini slurm_serializer_g_fini
+#define serialize_g_parse slurm_serialize_g_parse
+#define serialize_g_dump slurm_serialize_g_dump
 
 /* certgen.[ch] functions */
 #define certgen_g_init slurm_certgen_g_init
