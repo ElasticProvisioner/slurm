@@ -274,6 +274,30 @@ buf_t *init_buf(uint32_t size)
 	return my_buf;
 }
 
+extern void assign_buf(buf_t *buf, char **data_ptr, uint32_t bytes)
+{
+	void *data = *data_ptr;
+
+	*data_ptr = NULL;
+
+	xassert(buf->magic == BUF_MAGIC);
+
+	if (buf->shadow) {
+		/* do nothing */
+	} else if (buf->mmaped) {
+		munmap(buf->head, buf->size);
+	} else {
+		xfree(buf->head);
+	}
+
+	*buf = (buf_t) {
+		.magic = BUF_MAGIC,
+		.head = data,
+		.size = xsize(data),
+		.processed = bytes,
+	};
+}
+
 extern buf_t *try_init_buf(uint32_t size)
 {
 	buf_t *buf;

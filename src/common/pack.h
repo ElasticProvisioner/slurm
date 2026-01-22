@@ -101,6 +101,14 @@ extern buf_t *create_mmap_buf(const char *file);
 extern buf_t *create_shadow_buf(char *data, uint32_t size);
 extern void free_buf(buf_t *my_buf);
 extern buf_t *init_buf(uint32_t size);
+
+/*
+ * Assign data to buffer
+ * IN data_ptr - Pointer to data to take ownership of
+ * IN bytes - Number of populated bytes in data
+ * WARNING: data must be xmalloc()ed
+ */
+extern void assign_buf(buf_t *buf, char **data_ptr, uint32_t bytes);
 /*
  * Try to create buffer by given number of bytes.
  * IN size - number of bytes in buffer
