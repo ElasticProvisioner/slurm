@@ -256,10 +256,12 @@ static int _parse_yaml(char *topo_conf)
 
 	if (get_log_level() > LOG_LEVEL_DEBUG2) {
 		char *dump_str = NULL;
-		DATA_DUMP_TO_STR(TOPOLOGY_CONF_ARRAY, tctx_array, dump_str,
-				 NULL, MIME_TYPE_YAML, SER_FLAGS_NO_TAG,
-				 retval);
-		debug2("%s", dump_str);
+
+		if (!(SERCLI_DUMP_STR(TOPOLOGY_CONF_ARRAY, NULL, tctx_array,
+				      dump_str, MIME_TYPE_YAML,
+				      SER_FLAGS_NO_TAG)))
+			debug2("%s", dump_str);
+
 		xfree(dump_str);
 	}
 
