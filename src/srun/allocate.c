@@ -78,8 +78,6 @@ struct pollfd global_fds[1];
 
 extern char **environ;
 
-static slurm_step_id_t pending_job_id = SLURM_STEP_ID_INITIALIZER;
-
 /*
  * Static Prototypes
  */

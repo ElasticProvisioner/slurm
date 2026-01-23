@@ -134,6 +134,8 @@ typedef struct srun_job {
 				    * it needs to talk to */
 } srun_job_t;
 
+extern slurm_step_id_t pending_job_id;
+
 void    update_job_state(srun_job_t *job, srun_job_state_t newstate);
 void    job_force_termination(srun_job_t *job);
 

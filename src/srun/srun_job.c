@@ -119,6 +119,8 @@ static int pty_sigarray[] = { SIGWINCH, 0 };
 
 extern char **environ;
 
+slurm_step_id_t pending_job_id = SLURM_STEP_ID_INITIALIZER;
+
 /*
  * Prototypes:
  */
