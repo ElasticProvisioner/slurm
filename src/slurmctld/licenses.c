@@ -1044,13 +1044,16 @@ extern int hres_init()
 	if ((slurm_conf.debug_flags & DEBUG_FLAG_LICENSE)) {
 		char *dump_str = NULL;
 		int rc = SLURM_SUCCESS;
-		DATA_DUMP_TO_STR(H_RESOURCES_AS_LICENSE_LIST,
-				 cluster_license_list, dump_str, NULL,
-				 MIME_TYPE_YAML, SER_FLAGS_NO_TAG, rc);
-		if (rc)
-			error("Hierarchical resources dump failed");
-		verbose("%s: Dump hierarchical resources:\n %s", __func__,
-			dump_str);
+
+		if ((rc = SERCLI_DUMP_STR(H_RESOURCES_AS_LICENSE_LIST, NULL,
+					  cluster_license_list, dump_str,
+					  MIME_TYPE_YAML, SER_FLAGS_NO_TAG)))
+			log_flag(LICENSE, "%s: Hierarchical resources dump failed: %s",
+			      __func__, slurm_strerror(rc));
+		else
+			log_flag(LICENSE, "%s: Dump hierarchical resources:\n %s",
+				 __func__, dump_str);
+
 		xfree(dump_str);
 	}
 	slurm_mutex_unlock(&license_mutex);
