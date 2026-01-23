@@ -685,12 +685,18 @@ static void _parse_hierarchical_resources(list_t **license_list_ptr)
 
 		if ((slurm_conf.debug_flags & DEBUG_FLAG_LICENSE)) {
 			char *dump_str = NULL;
-			DATA_DUMP_TO_STR(H_RESOURCES_AS_LICENSE_LIST,
-					 *license_list_ptr, dump_str, NULL,
-					 MIME_TYPE_YAML, SER_FLAGS_NO_TAG, rc);
-			if (rc)
-				error("Hierarchical resources dump failed");
-			verbose("Dump hierarchical resources:\n %s", dump_str);
+			int rc_dump = EINVAL;
+
+			if ((rc_dump = SERCLI_DUMP_STR(
+				     H_RESOURCES_AS_LICENSE_LIST, NULL,
+				     *license_list_ptr, dump_str,
+				     MIME_TYPE_YAML, SER_FLAGS_NO_TAG)))
+				log_flag(LICENSE, "%s: Hierarchical resources dump failed: %s",
+				      __func__, slurm_strerror(rc_dump));
+			else
+				log_flag(LICENSE, "%s: Dump hierarchical resources:\n %s",
+					 __func__, dump_str);
+
 			xfree(dump_str);
 		}
 		FREE_NULL_BUFFER(conf_buf);
