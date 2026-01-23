@@ -195,9 +195,12 @@ static int _read_slurm_ns_conf(void)
 		goto end_it;
 	}
 
-	DATA_PARSE_FROM_STR(NAMESPACE_FULL_CONF_PTR, conf_buf->head,
-			    conf_buf->size, ns_full_conf, NULL, MIME_TYPE_YAML,
-			    rc);
+	if ((rc = SERCLI_PARSE_STR(NAMESPACE_FULL_CONF_PTR, NULL, ns_full_conf,
+				   get_buf_data(conf_buf), size_buf(conf_buf),
+				   MIME_TYPE_YAML)))
+		fatal("Something wrong with reading %s: %s",
+		      conf_path, slurm_strerror(rc));
+
 	if (!ns_full_conf ||
 	    (!ns_full_conf->defaults && !ns_full_conf->node_confs))
 		goto end_it;
