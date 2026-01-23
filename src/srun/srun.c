@@ -81,16 +81,17 @@
 
 #include "src/bcast/file_bcast.h"
 
-#include "launch.h"
-#include "allocate.h"
-#include "srun_job.h"
-#include "step_ctx.h"
-#include "opt.h"
-#include "debugger.h"
-#include "src/srun/srun_pty.h"
-#include "multi_prog.h"
 #include "src/api/pmi_server.h"
 #include "src/api/step_launch.h"
+
+#include "src/srun/allocate.h"
+#include "src/srun/debugger.h"
+#include "src/srun/launch.h"
+#include "src/srun/multi_prog.h"
+#include "src/srun/opt.h"
+#include "src/srun/srun_job.h"
+#include "src/srun/srun_pty.h"
+#include "src/srun/step_ctx.h"
 
 #ifndef OPEN_MPI_PORT_ERROR
 /* This exit code indicates the launched Open MPI tasks could
