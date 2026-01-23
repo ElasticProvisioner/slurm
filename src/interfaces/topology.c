@@ -404,18 +404,14 @@ extern int topology_g_destroy_config(void)
 
 extern char *topology_g_get_config(void)
 {
-	int retval = SLURM_SUCCESS;
 	char *dump_str = NULL;
 	topology_ctx_array_t tctx_array = {
 		.tctx = tctx,
 		.tctx_num = tctx_num,
 	};
 
-	DATA_DUMP_TO_STR(TOPOLOGY_CONF_ARRAY, tctx_array, dump_str, NULL,
-			 MIME_TYPE_YAML, SER_FLAGS_NO_TAG, retval);
-
-	if (retval)
-		xfree(dump_str);
+	(void) SERCLI_DUMP_STR(TOPOLOGY_CONF_ARRAY, NULL, tctx_array, dump_str,
+			       MIME_TYPE_YAML, SER_FLAGS_NO_TAG);
 
 	return dump_str;
 }
