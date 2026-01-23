@@ -236,11 +236,12 @@ static int _parse_yaml(char *topo_conf)
 		goto done;
 	}
 
-	DATA_PARSE_FROM_STR(TOPOLOGY_CONF_ARRAY, conf_buf->head, conf_buf->size,
-			    tctx_array, NULL, MIME_TYPE_YAML, retval);
-	if (retval)
-		fatal("Something wrong with reading %s: %s", topo_conf,
-		      slurm_strerror(retval));
+	if ((retval = SERCLI_PARSE_STR(TOPOLOGY_CONF_ARRAY, NULL, tctx_array,
+				       get_buf_data(conf_buf),
+				       size_buf(conf_buf), MIME_TYPE_YAML)))
+		fatal("Something wrong with reading %s: %s",
+		      topo_conf, slurm_strerror(retval));
+
 	qsort(tctx_array.tctx, tctx_array.tctx_num, sizeof(topology_ctx_t),
 	      _cmp_tctx);
 	for (int i = 0; i < tctx_array.tctx_num; i++) {
