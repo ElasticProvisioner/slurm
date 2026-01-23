@@ -676,10 +676,11 @@ static void _parse_hierarchical_resources(list_t **license_list_ptr)
 			fatal("Hierarchical resources could not be loaded from %s",
 			      resources_conf);
 		}
-		DATA_PARSE_FROM_STR(H_RESOURCES_AS_LICENSE_LIST, conf_buf->head,
-				    conf_buf->size, *license_list_ptr, NULL,
-				    MIME_TYPE_YAML, rc);
-		if (rc)
+
+		if ((rc = SERCLI_PARSE_STR(H_RESOURCES_AS_LICENSE_LIST, NULL,
+					   *license_list_ptr,
+					   get_buf_data(conf_buf),
+					   size_buf(conf_buf), MIME_TYPE_YAML)))
 			fatal("Something wrong with reading %s: %s",
 			      resources_conf, slurm_strerror(rc));
 
