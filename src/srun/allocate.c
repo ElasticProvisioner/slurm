@@ -393,7 +393,8 @@ extern resource_allocation_response_msg_t *allocate_nodes(
 	while (!resp) {
 		resp = slurm_allocate_resources_blocking(j,
 							 opt_local->immediate,
-							 _set_pending_job_id);
+							 _set_pending_job_id,
+							 -1);
 		if (destroy_job) {
 			if (pending_job_id.job_id != NO_VAL)
 				info("Job allocation %u has been revoked",
@@ -551,8 +552,11 @@ list_t *allocate_het_job_nodes(void)
 	is_het_job = true;
 
 	while (first_opt && !job_resp_list) {
-		job_resp_list = slurm_allocate_het_job_blocking(job_req_list,
-				 first_opt->immediate, _set_pending_job_id);
+		job_resp_list =
+			slurm_allocate_het_job_blocking(job_req_list,
+							first_opt->immediate,
+							_set_pending_job_id,
+							-1);
 		if (destroy_job) {
 			/* cancelled by signal */
 			if (pending_job_id.job_id != NO_VAL)
