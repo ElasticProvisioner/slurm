@@ -64,10 +64,8 @@ extern int	immediate_exit;	/* exit code for --imediate option & busy */
 extern slurm_opt_t opt;
 extern srun_opt_t sropt;
 extern list_t *opt_list;
-extern int	sig_array[];
 extern time_t	srun_begin_time; /* begin time of srun process */
 extern bool	srun_max_timer;
-extern bool	srun_shutdown;
 extern bitstr_t *g_het_grp_bits;
 extern bool local_het_step;
 

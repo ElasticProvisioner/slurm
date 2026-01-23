@@ -135,6 +135,11 @@ typedef struct srun_job {
 } srun_job_t;
 
 extern slurm_step_id_t pending_job_id;
+extern pthread_mutex_t pending_job_id_lock;
+
+/* In the context of a HetJob, this is the first job component */
+extern pthread_mutex_t srun_first_job_lock;
+extern srun_job_t *srun_first_job;
 
 void    update_job_state(srun_job_t *job, srun_job_state_t newstate);
 void    job_force_termination(srun_job_t *job);

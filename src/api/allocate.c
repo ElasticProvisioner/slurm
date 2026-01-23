@@ -1468,7 +1468,7 @@ static int _wait_for_alloc_rpc(const listen_t *listen, int sleep_time,
 	else
 		timeout_ms = -1;
 
-	while ((rc = poll(fds, 1, timeout_ms)) < 0) {
+	while ((rc = poll(fds, 2, timeout_ms)) < 0) {
 		switch (errno) {
 		case EAGAIN:
 		case EINTR:

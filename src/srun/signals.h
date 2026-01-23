@@ -36,4 +36,23 @@
 #ifndef _SRUN_SIGNALS_H
 #define _SRUN_SIGNALS_H
 
+/* Called only once at the beginning of the process */
+extern void srun_sig_init(void);
+
+/*
+ * If a signal comes in to destroy srun, this will be set to the signo used to
+ * destroy srun. Otherwise, this will be set to 0.
+ */
+extern int srun_destroy_sig;
+extern pthread_mutex_t srun_destroy_sig_lock;
+
+extern int srun_sig_eventfd;
+
+/*
+ * True if signals should be forwarded to running job. Otherwise, srun's
+ * internal signal handler will be used
+ */
+extern bool srun_sig_forward;
+extern pthread_mutex_t srun_sig_forward_lock;
+
 #endif /* _SRUN_SIGNALS_H */

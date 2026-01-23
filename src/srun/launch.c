@@ -44,6 +44,7 @@
 #include "src/srun/fname.h"
 #include "src/srun/launch.h"
 #include "src/srun/multi_prog.h"
+#include "src/srun/signals.h"
 #include "src/srun/task_state.h"
 
 #include "src/api/pmi_server.h"
@@ -1163,16 +1164,15 @@ extern int launch_handle_multi_prog_verify(int command_pos,
 }
 
 extern int launch_create_job_step(srun_job_t *job, bool use_all_cpus,
-				  void (*signal_function)(int),
-				  sig_atomic_t *destroy_job,
 				  slurm_opt_t *opt_local)
 {
 	srun_opt_t *srun_opt = opt_local->srun_opt;
-	int i, j, rc;
+	int i, rc;
 	unsigned long step_wait = 0;
 	uint16_t slurmctld_timeout;
 	slurm_step_layout_t *step_layout;
 	job_step_create_request_msg_t *step_req;
+	int tmp_srun_destroy_sig;
 
 	xassert(srun_opt);
 
@@ -1213,8 +1213,16 @@ extern int launch_create_job_step(srun_job_t *job, bool use_all_cpus,
 	      step_req->cpu_count, step_req->num_tasks,
 	      step_req->name, step_req->relative);
 
-	for (i = 0; (!(*destroy_job)); i++) {
+	for (i = 0;; i++) {
 		bool timed_out = false;
+
+		slurm_mutex_lock(&srun_destroy_sig_lock);
+		tmp_srun_destroy_sig = srun_destroy_sig;
+		slurm_mutex_unlock(&srun_destroy_sig_lock);
+
+		if (tmp_srun_destroy_sig)
+			break;
+
 		if (srun_opt->no_alloc) {
 			if (step_req->num_tasks == NO_VAL) {
 				step_req->num_tasks = job->ntasks;
@@ -1274,9 +1282,6 @@ extern int launch_create_job_step(srun_job_t *job, bool use_all_cpus,
 					verbose("Step completed in JobId=%u, retrying",
 						step_req->step_id.job_id);
 			}
-			xsignal_unblock(sig_array);
-			for (j = 0; sig_array[j]; j++)
-				xsignal(sig_array[j], signal_function);
 		} else {
 			if (rc == ESLURM_PROLOG_RUNNING)
 				verbose("Job %u step creation still disabled, retrying (%s)",
@@ -1293,14 +1298,21 @@ extern int launch_create_job_step(srun_job_t *job, bool use_all_cpus,
 			}
 		}
 
-		if (*destroy_job) {
+		slurm_mutex_lock(&srun_destroy_sig_lock);
+		tmp_srun_destroy_sig = srun_destroy_sig;
+		slurm_mutex_unlock(&srun_destroy_sig_lock);
+
+		if (tmp_srun_destroy_sig) {
 			/* cancelled by signal */
 			break;
 		}
 	}
 	if (i > 0) {
-		xsignal_block(sig_array);
-		if (*destroy_job) {
+		slurm_mutex_lock(&srun_destroy_sig_lock);
+		tmp_srun_destroy_sig = srun_destroy_sig;
+		slurm_mutex_unlock(&srun_destroy_sig_lock);
+
+		if (tmp_srun_destroy_sig) {
 			info("Cancelled pending step for job %u",
 			     step_req->step_id.job_id);
 			slurm_free_job_step_create_request_msg(step_req);
@@ -1563,12 +1575,17 @@ extern int launch_step_wait(srun_job_t *job, bool got_alloc,
 	if ((MPIR_being_debugged == 0) && retry_step_begin &&
 	    (retry_step_cnt < MAX_STEP_RETRIES) &&
 	     (job->het_job_id == NO_VAL)) {	/* Not hetjob step */
+
+		slurm_mutex_lock(&srun_sig_forward_lock);
+		srun_sig_forward = false;
+		slurm_mutex_unlock(&srun_sig_forward_lock);
+
 		retry_step_begin = false;
 		step_ctx_destroy(job->step_ctx);
 		if (got_alloc)
-			rc = create_job_step(job, true, opt_local);
+			rc = launch_create_job_step(job, true, opt_local);
 		else
-			rc = create_job_step(job, false, opt_local);
+			rc = launch_create_job_step(job, false, opt_local);
 		if (rc < 0)
 			exit(error_exit);
 		rc = -1;

@@ -107,8 +107,6 @@ extern int launch_handle_multi_prog_verify(int command_pos,
  * RETURN SLURM_SUCCESS on success || SLURM_ERROR else wise
  */
 extern int launch_create_job_step(srun_job_t *job, bool use_all_cpus,
-				  void (*signal_function)(int),
-				  sig_atomic_t *destroy_job,
 				  slurm_opt_t *opt_local);
 
 /*

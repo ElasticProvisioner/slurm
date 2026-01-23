@@ -89,6 +89,7 @@
 #include "src/srun/launch.h"
 #include "src/srun/multi_prog.h"
 #include "src/srun/opt.h"
+#include "src/srun/signals.h"
 #include "src/srun/srun_job.h"
 #include "src/srun/srun_pty.h"
 #include "src/srun/step_ctx.h"
@@ -100,6 +101,8 @@
 #define OPEN_MPI_PORT_ERROR 108
 #endif
 
+#define THREAD_COUNT 3
+
 static struct termios termdefaults;
 static uint32_t global_rc = 0;
 static uint32_t mpi_plugin_rc = 0;
@@ -107,10 +110,6 @@ static srun_job_t *job = NULL;
 
 extern char **environ;	/* job environment */
 bool srun_max_timer = false;
-bool srun_shutdown  = false;
-int sig_array[] = {
-	SIGINT,  SIGQUIT, SIGCONT, SIGTERM, SIGHUP,
-	SIGALRM, SIGUSR1, SIGUSR2, SIGPIPE, 0 };
 bitstr_t *g_het_grp_bits = NULL;
 
 typedef struct _launch_app_data
@@ -177,6 +176,12 @@ int srun(int ac, char **av)
 	slurm_init(NULL);
 	log_init(xbasename(av[0]), logopt, 0, NULL);
 	_set_exit_code();
+
+	/* Must be called before starting conmgr. */
+	xsignal(SIGTTIN, SIG_IGN);
+
+	conmgr_init(0, THREAD_COUNT, 0);
+	conmgr_run(false);
 
 	if (cli_filter_init() != SLURM_SUCCESS)
 		fatal("failed to initialize cli_filter plugin");
@@ -247,6 +252,9 @@ int srun(int ac, char **av)
 	log_fini();
 #endif /* MEMORY_LEAK_DEBUG */
 
+	conmgr_request_shutdown();
+	conmgr_fini();
+
 	return (int)global_rc;
 }
 
@@ -294,6 +302,10 @@ static void *_launch_one_app(void *data)
 		opt_local->argv[0] = xstrdup(opt_local->srun_opt->bcast_file);
 	}
 relaunch:
+	slurm_mutex_lock(&srun_sig_forward_lock);
+	srun_sig_forward = true;
+	slurm_mutex_unlock(&srun_sig_forward_lock);
+
 	launch_set_stdio_fds(job, &cio_fds, opt_local);
 
 	if (!launch_step_launch(job, &cio_fds, &global_rc, &step_callbacks,
@@ -713,7 +725,6 @@ static void _setup_one_job_env(slurm_opt_t *opt_local, srun_job_t *job,
 			tcgetattr(job->input_fd, &termdefaults);
 			atexit(&_pty_restore);
 
-			block_sigwinch();
 			pty_thread_create(job);
 			env->pty_port = job->pty_port;
 			env->ws_col = job->ws_col;
