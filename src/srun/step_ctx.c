@@ -56,17 +56,17 @@
 #include "src/common/hostlist.h"
 #include "src/common/net.h"
 #include "src/common/read_config.h"
-#include "src/interfaces/cred.h"
 #include "src/common/slurm_protocol_api.h"
 #include "src/common/slurm_protocol_defs.h"
-#include "src/interfaces/switch.h"
 #include "src/common/timers.h"
 #include "src/common/xmalloc.h"
 #include "src/common/xsignal.h"
 #include "src/common/xstring.h"
+#include "src/interfaces/cred.h"
+#include "src/interfaces/switch.h"
 
-#include "step_ctx.h"
-#include "launch.h"
+#include "src/srun/launch.h"
+#include "src/srun/step_ctx.h"
 
 int step_signals[] = {
 	SIGINT,  SIGQUIT, SIGCONT, SIGTERM, SIGHUP,
