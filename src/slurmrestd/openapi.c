@@ -267,7 +267,23 @@ static const openapi_path_binding_method_t openapi_methods[] = {
 	{0}
 };
 
+/* health endpoints to match slurmctld and slurmd */
+static const openapi_path_binding_method_t health_methods[] = {
+	{
+		.method = HTTP_REQUEST_GET,
+		.tags = (const char *[]){"health", NULL},
+		.summary = "Check slurmrestd health status",
+		.response =
+			{
+				.type = DATA_PARSER_BOOL,
+				.description = "HTTP status check if service is online",
+			},
+	},
+	{ 0 }
+};
+
 static int _op_handler_openapi(openapi_ctxt_t *ctxt);
+static int _op_handler_health(openapi_ctxt_t *ctxt);
 
 #define OP_FLAGS (OP_BIND_HIDDEN_OAS | OP_BIND_NO_SLURMDBD)
 
@@ -299,7 +315,25 @@ static const openapi_path_binding_t openapi_paths[] = {
 		.methods = openapi_methods,
 		.flags = OP_FLAGS,
 	},
-	{0}
+	{
+		.path = "/healthz",
+		.callback = _op_handler_health,
+		.methods = health_methods,
+		.flags = OP_FLAGS,
+	},
+	{
+		.path = "/readyz",
+		.callback = _op_handler_health,
+		.methods = health_methods,
+		.flags = OP_FLAGS,
+	},
+	{
+		.path = "/livez",
+		.callback = _op_handler_health,
+		.methods = health_methods,
+		.flags = OP_FLAGS,
+	},
+	{ 0 }
 };
 
 static const http_status_code_t *response_status_codes = NULL;
@@ -1478,6 +1512,11 @@ extern int generate_spec(data_t *dst, const char **mime_types)
 static int _op_handler_openapi(openapi_ctxt_t *ctxt)
 {
 	return generate_spec(ctxt->resp, get_mime_type_array());
+}
+
+static int _op_handler_health(openapi_ctxt_t *ctxt)
+{
+	return ESLURM_REST_EMPTY_RESULT;
 }
 
 static bool _on_error(void *arg, data_parser_type_t type, int error_code,
