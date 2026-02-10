@@ -7884,7 +7884,7 @@ static const parser_t PARSER_ARRAY(JOB)[] = {
 	add_parse(STRING, cluster, "cluster", "Cluster name"),
 	add_parse(STRING, constraints, "constraints", "Feature(s) the job requested as a constraint"),
 	add_parse(STRING, container, "container", "Absolute path to OCI container bundle"),
-	add_skip(db_index),
+	add_parse(SLUID, db_index, "sluid", "SLUID"),
 	add_parse(PROCESS_EXIT_CODE, derived_ec, "derived_exit_code", "Highest exit code of all job steps"),
 	add_parse(STRING, derived_es, "comment/job", "Arbitrary comment made by user"),
 	add_parse(UINT32, elapsed, "time/elapsed", "Elapsed time in seconds"),
