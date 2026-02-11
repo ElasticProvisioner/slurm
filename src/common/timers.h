@@ -68,18 +68,35 @@ typedef struct {
 		.buckets = { { 0 } }, \
 	})
 
+#define TIMER_HISTOGRAM tv_histogram
+#define TIMER_HISTOGRAM_PTR &TIMER_HISTOGRAM
+#define DEF_TIMER_HISTOGRAM \
+	static latency_histogram_t TIMER_HISTOGRAM = \
+		LATENCY_HISTOGRAM_INITIALIZER
+#define TIMER_ADD_HISTOGRAM() \
+	latency_metric_add_histogram_value(TIMER_HISTOGRAM_PTR, \
+					   timespec_diff_ns(TIMER_END_TS, \
+							    TIMER_START_TS) \
+						   .diff)
+
 #else /* !__STDC_NO_ATOMICS__ */
 
 /* Only provide a placeholder type to avoid breaking structs */
 typedef void *latency_histogram_t;
 #define LATENCY_HISTOGRAM_INITIALIZER NULL
 
+#define TIMER_HISTOGRAM
+#define TIMER_HISTOGRAM_PTR NULL
+#define DEF_TIMER_HISTOGRAM
+#define TIMER_ADD_HISTOGRAM()
+
 #endif /* !__STDC_NO_ATOMICS__ */
 
 #define TIMER_START_TS tv1
 #define TIMER_END_TS tv2
 #define DEF_TIMERS \
-	timespec_t TIMER_START_TS = { 0, 0 }, TIMER_END_TS = { 0, 0 };
+	timespec_t TIMER_START_TS = { 0, 0 }, TIMER_END_TS = { 0, 0 }; \
+	DEF_TIMER_HISTOGRAM;
 #define START_TIMER \
 	do { \
 		TIMER_START_TS = timespec_now(); \
@@ -87,18 +104,21 @@ typedef void *latency_histogram_t;
 #define END_TIMER \
 	do { \
 		TIMER_END_TS = timespec_now(); \
+		TIMER_ADD_HISTOGRAM(); \
 	} while (false)
 #define END_TIMER2(from) \
 	do { \
 		TIMER_END_TS = timespec_now(); \
 		timer_compare_limit(TIMER_START_TS, TIMER_END_TS, from, \
-				    (timespec_t) { 0, 0 }); \
+				    (timespec_t) { 0, 0 }, \
+				    TIMER_HISTOGRAM_PTR); \
 	} while (false)
 #define END_TIMER3(from, limit) \
 	do { \
 		TIMER_END_TS = timespec_now(); \
 		timer_compare_limit(TIMER_START_TS, TIMER_END_TS, from, \
-				    TIMESPEC_FROM_USEC(limit)); \
+				    TIMESPEC_FROM_USEC(limit), \
+				    TIMER_HISTOGRAM_PTR); \
 	} while (false)
 /*
  * Get duration of time between START_TIMER and END_TIMER as string
@@ -129,7 +149,8 @@ typedef struct {
  * IN limit - limit to wait
  */
 extern void timer_compare_limit(const timespec_t tv1, const timespec_t tv2,
-				const char *from, timespec_t limit);
+				const char *from, timespec_t limit,
+				latency_histogram_t *histogram);
 
 /*
  * Get string of time difference between tv1 and tv2 into tv_str

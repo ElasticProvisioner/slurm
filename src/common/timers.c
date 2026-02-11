@@ -142,13 +142,17 @@ static hourminsec_str_t _timespec_to_hourminsec(const timespec_t ts)
 }
 
 extern void timer_compare_limit(const timespec_t tv1, const timespec_t tv2,
-				const char *from, timespec_t limit)
+				const char *from, timespec_t limit,
+				latency_histogram_t *histogram)
 {
 	bool is_after_limit = false;
 	timespec_t debug_limit = limit;
 	const timespec_t diff = timespec_diff_ns(tv2, tv1).diff;
 
 	xassert(from);
+
+	if (histogram)
+		latency_metric_add_histogram_value(histogram, diff);
 
 	if (!limit.tv_nsec && !limit.tv_sec) {
 		/*
@@ -170,10 +174,24 @@ extern void timer_compare_limit(const timespec_t tv1, const timespec_t tv2,
 			_timespec_to_hourminsec(tv1).str,
 			(int) (tv1.tv_nsec / NSEC_IN_MSEC));
 	} else { /* Log anything over 1 second here */
-		debug("Note large processing time from %s: %s began=%s.%3.3d",
+		char str_labels[LATENCY_METRIC_HISTOGRAM_STR_LEN] = { 0 };
+		char str_buckets[LATENCY_METRIC_HISTOGRAM_STR_LEN] = { 0 };
+
+		if (histogram) {
+			(void) latency_histogram_print_labels(
+				str_labels, sizeof(str_labels));
+			(void) latency_histogram_print(histogram, str_buckets,
+						       sizeof(str_buckets));
+		}
+
+		debug("Note large processing time from %s: %s began=%s.%3.3d%s%s%s%s",
 		      from, timer_duration_str(tv1, tv2).str,
 		      _timespec_to_hourminsec(tv1).str,
-		      (int) (tv1.tv_nsec / NSEC_IN_MSEC));
+		      (int) (tv1.tv_nsec / NSEC_IN_MSEC),
+		      (histogram ? "\nHistogram: " : ""),
+		      (histogram ? str_labels : ""),
+		      (histogram ? "\nHistogram: " : ""),
+		      (histogram ? str_buckets : ""));
 	}
 }
 
