@@ -36,6 +36,7 @@
 #ifndef _SLURM_ATOMIC_H
 #define _SLURM_ATOMIC_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /*
@@ -57,6 +58,26 @@
 
 /* Debug log current features of Atomic support from compiler */
 extern void atomic_log_features(void);
+
+/******************************************************************************
+ * atomic run it once
+ ******************************************************************************/
+
+/* Always use atomic_run_once() and ATOMIC_RUN_ONCE_INITIALIZER() */
+typedef struct {
+	_Atomic bool value;
+} atomic_run_once_t;
+
+#define ATOMIC_RUN_ONCE_INITIALIZER() \
+	((atomic_run_once_t) { \
+		.value = false, \
+	})
+
+/* Use atomic_uint64_add() instead */
+extern bool atomic_run_once_ptr(atomic_run_once_t *target);
+
+/* Only returns true once during the life of the process */
+#define atomic_run_once(target) atomic_run_once_ptr(&target)
 
 /******************************************************************************
  * atomic uint64
