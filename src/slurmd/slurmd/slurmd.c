@@ -344,7 +344,7 @@ static void _on_sigpipe(conmgr_callback_args_t conmgr_args, void *arg)
 	info("Caught SIGPIPE. Ignoring.");
 }
 
-static probe_status_t _probe_listener(probe_log_t *log)
+static probe_status_t _probe_listener(probe_log_t *log, void *arg)
 {
 	probe_status_t status = PROBE_RC_UNKNOWN;
 
@@ -393,7 +393,7 @@ main (int argc, char **argv)
 	log_init(argv[0], lopts, LOG_DAEMON, NULL);
 
 	probe_init();
-	probe_register("rpc-listeners", _probe_listener);
+	probe_register("rpc-listeners", _probe_listener, NULL);
 
 	if (original) {
 		/*

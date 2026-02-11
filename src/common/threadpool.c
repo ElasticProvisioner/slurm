@@ -863,7 +863,7 @@ static void _probe_verbose(probe_log_t *log)
 	probe_log(log, "join histogram: %s", histogram);
 }
 
-static probe_status_t _probe(probe_log_t *log)
+static probe_status_t _probe(probe_log_t *log, void *arg)
 {
 	probe_status_t status = PROBE_RC_UNKNOWN;
 
@@ -912,7 +912,7 @@ extern void threadpool_init(const int default_count, const char *params)
 
 	slurm_mutex_unlock(&threadpool.mutex);
 
-	probe_register("threadpool", _probe);
+	probe_register("threadpool", _probe, NULL);
 
 	xassert(preallocate >= 0);
 

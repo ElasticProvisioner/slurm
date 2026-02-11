@@ -51,6 +51,7 @@ typedef struct {
 	int magic; /* PROBE_MAGIC */
 	const char *name;
 	probe_query_t query;
+	void *arg;
 } probe_t;
 
 #define PROBE_RUN_MAGIC 0xaaa3bfa9
@@ -96,7 +97,7 @@ extern void probe_fini(void)
 	FREE_NULL_LIST(probes);
 }
 
-extern void probe_register(const char *name, probe_query_t query)
+extern void probe_register(const char *name, probe_query_t query, void *arg)
 {
 	probe_t *probe = NULL;
 
@@ -108,6 +109,7 @@ extern void probe_register(const char *name, probe_query_t query)
 		.magic = PROBE_MAGIC,
 		.name = name,
 		.query = query,
+		.arg = arg,
 	};
 
 	xassert(name && name[0]);
@@ -132,9 +134,9 @@ static int _run(void *x, void *arg)
 			.run = run,
 		};
 
-		status = probe->query(&log);
+		status = probe->query(&log, probe->arg);
 	} else {
-		status = probe->query(NULL);
+		status = probe->query(NULL, probe->arg);
 	}
 
 	xassert(status > PROBE_RC_INVALID);
