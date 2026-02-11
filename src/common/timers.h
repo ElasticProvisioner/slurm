@@ -47,6 +47,31 @@
 #include <src/common/atomic.h>
 #include <src/common/slurm_time.h>
 
+/*
+ * Number of latency ranges in latency histogram.
+ * WARNING: Must be kept in sync with ARRAY_SIZE(latency_ranges).
+ */
+#define LATENCY_RANGE_COUNT 24
+
+#ifndef __STDC_NO_ATOMICS__
+
+typedef struct {
+	atomic_uint64_t buckets[LATENCY_RANGE_COUNT];
+} latency_histogram_t;
+
+#define LATENCY_HISTOGRAM_INITIALIZER \
+	((latency_histogram_t) { \
+		.buckets = { { 0 } }, \
+	})
+
+#else /* !__STDC_NO_ATOMICS__ */
+
+/* Only provide a placeholder type to avoid breaking structs */
+typedef void *latency_histogram_t;
+#define LATENCY_HISTOGRAM_INITIALIZER NULL
+
+#endif /* !__STDC_NO_ATOMICS__ */
+
 #define TIMER_START_TS tv1
 #define TIMER_END_TS tv2
 #define DEF_TIMERS \
@@ -110,31 +135,6 @@ extern void timer_compare_limit(const timespec_t tv1, const timespec_t tv2,
  */
 extern timer_str_t timer_duration_str(const timespec_t tv1,
 				      const timespec_t tv2);
-
-/*
- * Number of latency ranges in latency histogram.
- * WARNING: Must be kept in sync with ARRAY_SIZE(latency_ranges).
- */
-#define LATENCY_RANGE_COUNT 24
-
-#ifndef __STDC_NO_ATOMICS__
-
-typedef struct {
-	atomic_uint64_t buckets[LATENCY_RANGE_COUNT];
-} latency_histogram_t;
-
-#define LATENCY_HISTOGRAM_INITIALIZER \
-	((latency_histogram_t) { \
-		.buckets = { { 0 } }, \
-	})
-
-#else /* !__STDC_NO_ATOMICS__ */
-
-/* Only provide a placeholder type to avoid breaking structs */
-typedef void *latency_histogram_t;
-#define LATENCY_HISTOGRAM_INITIALIZER NULL
-
-#endif /* !__STDC_NO_ATOMICS__ */
 
 /* Struct to hold latency metric state */
 typedef struct {
