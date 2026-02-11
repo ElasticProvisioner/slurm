@@ -40,10 +40,12 @@
 #include <sys/time.h>
 
 #include "src/common/log.h"
+#include "src/common/probes.h"
 #include "src/common/slurm_protocol_defs.h"
 #include "src/common/slurm_time.h"
 #include "src/common/timers.h"
 #include "src/common/xassert.h"
+#include "src/common/xstring.h"
 
 #define TIMER_DEFAULT_LIMIT \
 	((timespec_t) { \
@@ -54,6 +56,7 @@
 		.tv_sec = 1, \
 	})
 #define HISTOGRAM_FIELD_DELIMITER "|"
+#define MAX_TIMER_NAME_BYTES 256
 
 typedef struct {
 	const char *label;
@@ -319,6 +322,32 @@ extern int latency_histogram_print(latency_histogram_t *histogram, char *buffer,
 				  atomic_uint64_get(histogram->buckets[i]));
 
 	return wrote;
+}
+
+static probe_status_t _probe(probe_log_t *log, void *arg)
+{
+	char str[LATENCY_METRIC_HISTOGRAM_STR_LEN] = { 0 };
+	latency_histogram_t *histogram = arg;
+
+	xassert(histogram->magic == LATENCY_HISTOGRAM_MAGIC);
+
+	(void) latency_histogram_print_labels(str, sizeof(str));
+	probe_log(log, "histogram: %s", str);
+
+	(void) latency_histogram_print(histogram, str, sizeof(str));
+	probe_log(log, "histogram: %s", str);
+
+	return PROBE_RC_READY;
+}
+
+extern void timer_register_probe(latency_histogram_t *histogram,
+				 const char *caller)
+{
+	char name[MAX_TIMER_NAME_BYTES] = { 0 };
+
+	(void) snprintf(name, sizeof(name), "timer@%s()", caller);
+
+	probe_register(name, _probe, histogram);
 }
 
 #else /* __STDC_NO_ATOMICS__ */
