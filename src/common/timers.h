@@ -55,12 +55,16 @@
 
 #ifndef __STDC_NO_ATOMICS__
 
+#define LATENCY_HISTOGRAM_MAGIC 0xa2ffbaca
+
 typedef struct {
+	int magic; /* LATENCY_HISTOGRAM_MAGIC */
 	atomic_uint64_t buckets[LATENCY_RANGE_COUNT];
 } latency_histogram_t;
 
 #define LATENCY_HISTOGRAM_INITIALIZER \
 	((latency_histogram_t) { \
+		.magic = LATENCY_HISTOGRAM_MAGIC, \
 		.buckets = { { 0 } }, \
 	})
 

@@ -265,6 +265,8 @@ extern int latency_histogram_print_labels(char *buffer, size_t buffer_len)
 extern void latency_metric_add_histogram_value(latency_histogram_t *histogram,
 					       timespec_t value)
 {
+	xassert(histogram->magic == LATENCY_HISTOGRAM_MAGIC);
+
 	for (int i = 0; (i < ARRAY_SIZE(latency_ranges)); i++) {
 		const latency_range_t *range = &latency_ranges[i];
 
@@ -283,6 +285,8 @@ extern int latency_histogram_print(latency_histogram_t *histogram, char *buffer,
 				   size_t buffer_len)
 {
 	int wrote = 0;
+
+	xassert(histogram->magic == LATENCY_HISTOGRAM_MAGIC);
 
 	/* sanity check the buckets sizes are still same sizes */
 	xassert(ARRAY_SIZE(latency_ranges) == ARRAY_SIZE(histogram->buckets));
