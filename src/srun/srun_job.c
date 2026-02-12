@@ -120,6 +120,8 @@ static int shepherd_fd = -1;
 extern char **environ;
 
 slurm_step_id_t pending_job_id = SLURM_STEP_ID_INITIALIZER;
+pthread_mutex_t pending_job_id_lock = PTHREAD_MUTEX_INITIALIZER;
+
 srun_job_t *srun_first_job = NULL;
 pthread_mutex_t srun_first_job_lock = PTHREAD_MUTEX_INITIALIZER;
 

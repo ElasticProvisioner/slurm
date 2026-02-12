@@ -182,9 +182,11 @@ rwfail:
 	debug("Got signal %d", signo);
 
 	/* Tell slurmctld that job is complete */
+	slurm_mutex_lock(&pending_job_id_lock);
 	if (pending_job_id.job_id != NO_VAL) {
 		slurm_complete_job(&pending_job_id, SIGNAL_EXIT_BASE + signo);
 	}
+	slurm_mutex_unlock(&pending_job_id_lock);
 }
 
 #define DEFINE_SRUN_SIGNAL_WORK(sig, str) \
