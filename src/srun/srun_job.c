@@ -1610,8 +1610,7 @@ update_job_state(srun_job_t *job, srun_job_state_t state)
 	return;
 }
 
-srun_job_state_t
-job_state(srun_job_t *job)
+extern srun_job_state_t srun_job_state(srun_job_t *job)
 {
 	srun_job_state_t state;
 	slurm_mutex_lock(&job->state_mutex);
