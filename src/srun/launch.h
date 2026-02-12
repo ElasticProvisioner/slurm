@@ -58,22 +58,6 @@ extern slurm_step_layout_t *launch_common_get_slurm_step_layout(
 					srun_job_t *job);
 
 /*
- * launch_common_create_job_step() creates the job step with the given info.
- *
- * IN job - job to be created into a job step
- * IN use_all_cpus - the choice to use all the cpus.
- * IN signal_function - function that handles the signals coming in.
- * IN destroy_job - pointer to a global flag signifying if the job was
- *                  canceled while allocating.
- *
- * RETURN SLURM_SUCCESS on success || SLURM_ERROR else wise
- */
-extern int launch_common_create_job_step(srun_job_t *job, bool use_all_cpus,
-					 void (*signal_function)(int),
-					 sig_atomic_t *destroy_job,
-					 slurm_opt_t *opt_local);
-
-/*
  * launch_common_set_stdio_fds() sets the stdio_fds to given info.
  *
  * IN job - the job that is set.
