@@ -125,11 +125,13 @@ static void _forward_signal(int signo)
 		_handle_pipe();
 		break;
 	case SIGALRM:
+		slurm_mutex_lock(&srun_max_timer_lock);
 		if (srun_max_timer) {
 			info("First task exited %ds ago", sropt.max_wait);
 			launch_print_status();
 			launch_step_terminate();
 		}
+		slurm_mutex_unlock(&srun_max_timer_lock);
 		break;
 	default:
 		launch_fwd_signal(signo);

@@ -110,6 +110,7 @@ static srun_job_t *job = NULL;
 
 extern char **environ;	/* job environment */
 bool srun_max_timer = false;
+pthread_mutex_t srun_max_timer_lock = PTHREAD_MUTEX_INITIALIZER;
 bitstr_t *g_het_grp_bits = NULL;
 
 typedef struct _launch_app_data

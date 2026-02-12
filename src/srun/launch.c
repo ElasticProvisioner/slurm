@@ -229,7 +229,9 @@ static void _setup_max_wait_timer(void)
 	 */
 	verbose("First task exited. Terminating job in %ds",
 		opt_save->srun_opt->max_wait);
+	slurm_mutex_lock(&srun_max_timer_lock);
 	srun_max_timer = true;
+	slurm_mutex_unlock(&srun_max_timer_lock);
 	alarm(opt_save->srun_opt->max_wait);
 }
 

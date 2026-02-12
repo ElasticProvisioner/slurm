@@ -66,6 +66,7 @@ extern srun_opt_t sropt;
 extern list_t *opt_list;
 extern time_t	srun_begin_time; /* begin time of srun process */
 extern bool	srun_max_timer;
+extern pthread_mutex_t srun_max_timer_lock;
 extern bitstr_t *g_het_grp_bits;
 extern bool local_het_step;
 
