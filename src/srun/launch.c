@@ -396,7 +396,7 @@ static void _task_finish(task_exit_msg_t *msg)
 		}
 
 	} else if (WIFSIGNALED(msg->return_code)) {
-		if (my_srun_job->state >= SRUN_JOB_CANCELLED) {
+		if (srun_job_state(my_srun_job) >= SRUN_JOB_CANCELLED) {
 			if (get_log_level() >= LOG_LEVEL_VERBOSE)
 				build_task_string = true;
 		} else {
@@ -443,11 +443,10 @@ static void _task_finish(task_exit_msg_t *msg)
 		if (WCOREDUMP(msg->return_code))
 			core_str = " (core dumped)";
 #endif
-		if (my_srun_job->state >= SRUN_JOB_CANCELLED) {
+		if (srun_job_state(my_srun_job) >= SRUN_JOB_CANCELLED) {
 			verbose("%s: %s %s: %s%s",
 				hosts, task_str, tasks, signal_str, core_str);
-		} else if ((reduce_task_exit_msg == 0) ||
-			   (msg_printed == 0) ||
+		} else if ((reduce_task_exit_msg == 0) || (msg_printed == 0) ||
 			   (msg->return_code != last_task_exit_rc)) {
 			error("%s: %s %s: %s%s",
 			      hosts, task_str, tasks, signal_str, core_str);
