@@ -94,4 +94,27 @@ extern int serdes_dump(serialize_dump_state_t **state_ptr,
 	serdes_dump(&state, parser, DATA_PARSER_##type, &src, sizeof(src), \
 		    dst, mime_type, flags)
 
+/*
+ * Dump given target struct src into buffer
+ * NOTE: Use SERDES_DUMP_BUF() macro instead of calling directly!
+ * NOTE: Use SERDES_DUMP() for fixed size buffers instead.
+ * IN parser - return from data_parser_g_new()
+ * IN type - data_parser type of obj
+ * IN src - ptr to struct/scalar to dump to data_t
+ *	This *must* be a pointer to the object and not just a value of the object.
+ * IN src_bytes - size of object pointed to by src
+ * OUT dst - pointer to buffer to populate
+ *	dst buffer will be resized to fit entire string.
+ * IN flags - optional flags to specify to serilzier to change presentation of
+ *	data
+ * RET SLURM_SUCCESS or error
+ */
+extern int serdes_dump_buf(data_parser_t *parser, data_parser_type_t type,
+			   void *src, ssize_t src_bytes, buf_t *dst,
+			   const char *mime_type, serializer_flags_t flags);
+
+#define SERDES_DUMP_BUF(parser, type, src, dst, mime_type, flags) \
+	serdes_dump_buf(parser, DATA_PARSER_##type, &src, sizeof(src), dst, \
+			mime_type, flags)
+
 #endif

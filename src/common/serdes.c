@@ -143,3 +143,36 @@ extern int serdes_dump(serialize_dump_state_t **state_ptr,
 	return _indirect_dump(state_ptr, parser, type, src, src_bytes, dst,
 			      mime_type, flags);
 }
+
+extern int serdes_dump_buf(data_parser_t *parser, data_parser_type_t type,
+			   void *src, ssize_t src_bytes, buf_t *dst,
+			   const char *mime_type, serializer_flags_t flags)
+{
+	serialize_dump_state_t *state = NULL;
+	int rc = SLURM_SUCCESS;
+
+	while (!rc) {
+		if ((rc = serdes_dump(&state, parser, type, src, src_bytes, dst,
+				      mime_type, flags)))
+			break;
+
+		/* check if dump is complete */
+		if (!state)
+			break;
+
+		/*
+		 * Expand buffer as dump is incomplete or release state on
+		 * failure
+		 */
+		if ((rc = try_grow_buf(dst, BUF_SIZE)))
+			(void) serdes_dump(&state, parser, type, src, src_bytes,
+					   NULL, mime_type, flags);
+	};
+
+	/* Avoid leaking content from failed dump */
+	if (rc)
+		set_buf_offset(dst, 0);
+
+	xassert(!state);
+	return rc;
+}
