@@ -34,8 +34,10 @@
 \*****************************************************************************/
 
 #include "src/common/sercli.h"
+#include "src/common/pack.h"
 #include "src/common/plugin.h"
 #include "src/common/read_config.h"
+#include "src/common/serdes.h"
 #include "src/common/xassert.h"
 #include "src/common/xmalloc.h"
 #include "src/common/xstring.h"
@@ -152,9 +154,9 @@ extern int data_parser_dump_cli_stdout(data_parser_type_t type, void *obj,
 				       openapi_resp_meta_t *meta)
 {
 	int rc = SLURM_SUCCESS;
-	data_t *dresp = NULL;
-	data_parser_t *parser;
-	char *out = NULL;
+	data_parser_t *parser = NULL;
+	buf_t *out = NULL;
+	serialize_dump_state_t *state = NULL;
 
 	if (!xstrcasecmp(data_parser, "list")) {
 		dprintf(STDERR_FILENO, "Possible data_parser plugins:\n");
@@ -179,32 +181,28 @@ extern int data_parser_dump_cli_stdout(data_parser_type_t type, void *obj,
 	xassert(!meta->plugin.data_parser);
 	meta->plugin.data_parser = xstrdup(data_parser_get_plugin(parser));
 
-	dresp = data_new();
+	out = init_buf(BUF_SIZE);
 
-	if (!data_parser_g_dump(parser, type, obj, obj_bytes, dresp) &&
-	    (data_get_type(dresp) != DATA_TYPE_NULL)) {
-		serializer_flags_t sflags = SER_FLAGS_NONE;
+	do {
+		rc = serdes_dump(&state, parser, type, obj, obj_bytes, out,
+				 mime_type, SER_FLAGS_NONE);
 
-		if (data_parser_g_is_complex(parser))
-			sflags |= SER_FLAGS_COMPLEX;
+		(void) printf("%.*s", get_buf_offset(out), get_buf_data(out));
 
-		serialize_g_data_to_string(&out, NULL, dresp, mime_type,
-					   sflags);
-	}
+		set_buf_offset(out, 0);
+	} while (state);
 
-	if (out && out[0])
-		printf("%s\n", out);
-	else
-		debug("No output generated");
+	printf("\n");
 
 cleanup:
+	xassert(!state);
+
 	/*
 	 * This is only called from the CLI just before exiting.
 	 * Skip the explicit free here to improve responsiveness.
 	 */
 #ifdef MEMORY_LEAK_DEBUG
-	xfree(out);
-	FREE_NULL_DATA(dresp);
+	FREE_NULL_BUFFER(out);
 	FREE_NULL_DATA_PARSER(parser);
 #endif
 
