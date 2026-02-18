@@ -67,6 +67,29 @@ extern int serdes_parse(serialize_parse_state_t **state_ptr,
 		     src, mime_type)
 
 /*
+ * Parse given string buffer into target struct dst
+ * NOTE: Use SERDES_PARSE_BUF() macro instead of calling directly!
+ * IN parser - return from data_parser_g_new()
+ * IN type - expected data_parser type of obj
+ * IN dst - ptr to struct/scalar to populate
+ *	This *must* be a pointer to the object and not just a value of the
+ *	object.
+ * IN dst_bytes - size of object pointed to by dst
+ * IN src - string buffer to parse into obj.
+ *	[offset, size) will be string to be read.
+ *	src offset will be set with how many bytes have been processed
+ * IN mime_type - deserialize data using given mime_type
+ * RET SLURM_SUCCESS or error
+ */
+extern int serdes_parse_buf(data_parser_t *parser, data_parser_type_t type,
+			    void *dst, ssize_t dst_bytes, buf_t *src,
+			    const char *mime_type);
+
+#define SERDES_PARSE_BUF(parser, type, dst, src, mime_type) \
+	serdes_parse_buf(parser, DATA_PARSER_##type, &dst, sizeof(dst), src, \
+			 mime_type)
+
+/*
  * Dump given target struct src into fixed size buffer
  * NOTE: Use SERDES_DUMP() macro instead of calling directly!
  * IN/OUT state_ptr - Pointer populated with parsing state

@@ -93,6 +93,22 @@ extern int serdes_parse(serialize_parse_state_t **state_ptr,
 			       mime_type);
 }
 
+extern int serdes_parse_buf(data_parser_t *parser, data_parser_type_t type,
+			    void *dst, ssize_t dst_bytes, buf_t *src,
+			    const char *mime_type)
+{
+	serialize_parse_state_t *state = NULL;
+	int rc = EINVAL;
+
+	do {
+		rc = serdes_parse(&state, parser, type, dst, dst_bytes, src,
+				  mime_type);
+	} while (!rc && state);
+
+	xassert(!state);
+	return rc;
+}
+
 /*
  * Serializer plugin does doesn't support directly dumping from mime_type format
  * to struct. We need to instead dump into data_t from the mime_type and then
