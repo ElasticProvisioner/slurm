@@ -132,6 +132,11 @@ extern int try_grow_buf(buf_t *buffer, uint32_t size);
  * RET SLURM_SUCCESS or error
  */
 extern int try_grow_buf_remaining(buf_t *buffer, uint32_t size);
+/*
+ * Extract Buffer head pointer
+ * IN/OUT my_buf - Pointer to buffer (will be xfree()ed)
+ * RET pointer to buffer's head pointer or NULL on failure
+ */
 extern void *xfer_buf_data(buf_t *my_buf);
 
 extern void pack_time(time_t val, buf_t *buffer);
