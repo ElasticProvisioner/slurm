@@ -274,7 +274,7 @@
 #define	free_buf		slurm_free_buf
 #define grow_buf		slurm_grow_buf
 #define	init_buf		slurm_init_buf
-#define	xfer_buf_data		slurm_xfer_buf_data
+#define xfer_buf_data_ptr slurm_xfer_buf_data_ptr
 #define	pack_time		slurm_pack_time
 #define	unpack_time		slurm_unpack_time
 #define	packfloat 		slurm_packfloat
