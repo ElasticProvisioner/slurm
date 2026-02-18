@@ -646,10 +646,9 @@ extern openapi_resp_meta_t *data_parser_cli_meta(int argc, char **argv,
 	return meta;
 }
 
-extern openapi_type_t data_parser_g_resolve_openapi_type(
-	data_parser_t *parser,
-	data_parser_type_t type,
-	const char *field)
+extern int data_parser_g_resolve_openapi_type(data_parser_t *parser,
+					      data_parser_type_t type,
+					      const char *field)
 {
 	const parse_funcs_t *funcs;
 

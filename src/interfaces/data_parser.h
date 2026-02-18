@@ -37,7 +37,6 @@
 #define _INTERFACES_DATA_PARSER_H
 
 #include "src/common/data.h"
-#include "src/common/openapi.h"
 
 /*
  * Enumeration of all parsers that data_parser plugins will handle.
@@ -879,12 +878,11 @@ extern int data_parser_g_dump(data_parser_t *parser, data_parser_type_t type,
  * Get the OpenAPI type for a given parser's field
  * IN parser - parser to query
  * IN field - field name or NULL to get parser's type
- * RET openapi type or OPENAPI_TYPE_INVALID if not found
+ * RET openapi_type_t or OPENAPI_TYPE_INVALID if not found
  */
-extern openapi_type_t data_parser_g_resolve_openapi_type(
-	data_parser_t *parser,
-	data_parser_type_t type,
-	const char *field);
+extern int data_parser_g_resolve_openapi_type(data_parser_t *parser,
+					      data_parser_type_t type,
+					      const char *field);
 
 /*
  * Get stringified type from parser
