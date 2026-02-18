@@ -37,6 +37,7 @@
 #define _COMMON_SERCLI_H
 
 #include "src/interfaces/data_parser.h"
+#include "src/interfaces/serializer.h"
 
 /*
  * Generate meta instance for a CLI command
@@ -120,6 +121,35 @@ extern int data_parser_dump_cli_stdout(data_parser_type_t type, void *obj,
 		DATA_DUMP_CLI(type, openapi_resp, argc, argv, db_conn, \
 			      mime_type, data_parser, rc); \
 	} while (false)
+
+/*
+ * Dump given target struct src into string
+ * NOTE: Use SERCLI_DUMP_STR() macro instead of calling directly!
+ * NOTE: Use SERDES_DUMP() for fixed size buffers instead.
+ * NOTE: Use SERDES_DUMP_BUF() for buffers instead.
+ * NOTE: errors logged via openapi_error_log_foreach()
+ * NOTE: warnings logged via openapi_warn_log_foreach()
+ * IN type - data_parser type of obj
+ * IN db_conn - database connection pointer
+ * IN src - ptr to struct/scalar to dump to data_t
+ *	This *must* be a pointer to the object and not just a value of the
+ *	object.
+ * IN src_bytes - size of object pointed to by src
+ * OUT dst_ptr - pointer to string to populate (caller must xfree())
+ * IN mime_type - mime type for dumping
+ * IN flags - optional flags to specify to serilzier to change presentation of
+ *	data
+ * IN caller - __func__ from caller for logging
+ * RET SLURM_SUCCESS or error
+ */
+extern int sercli_dump_str(data_parser_type_t type, void *db_conn, void *src,
+			   ssize_t src_bytes, char **dst_ptr,
+			   const char *mime_type,
+			   const serializer_flags_t flags, const char *caller);
+
+#define SERCLI_DUMP_STR(type, db_conn, src, dst, mime_type, flags) \
+	sercli_dump_str(DATA_PARSER_##type, db_conn, &(src), sizeof(src), \
+			&(dst), mime_type, flags, __func__)
 
 /* Dump a struct into a json or yaml string. All errors and warnings logged */
 #define DATA_DUMP_TO_STR(type, src, ret_str, db_conn, mime_type, sflags, rc) \

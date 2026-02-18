@@ -220,3 +220,58 @@ extern data_parser_t *data_parser_cli_parser(const char *data_parser, void *arg)
 						default_data_parser),
 				 NULL, false);
 }
+
+extern int sercli_dump_str(data_parser_type_t type, void *db_conn, void *src,
+			   ssize_t src_bytes, char **dst_ptr,
+			   const char *mime_type,
+			   const serializer_flags_t flags, const char *caller)
+{
+	int rc = EINVAL;
+	data_parser_t *parser = NULL;
+	data_parser_dump_cli_ctxt_t ctxt = {
+		.magic = DATA_PARSER_DUMP_CLI_CTXT_MAGIC,
+		.data_parser = SLURM_DATA_PARSER_VERSION,
+	};
+	buf_t *buf = NULL;
+
+	xfree(*dst_ptr);
+
+	ctxt.errors = list_create(free_openapi_resp_error);
+	ctxt.warnings = list_create(free_openapi_resp_warning);
+
+	if (!(parser = data_parser_cli_parser(ctxt.data_parser, &ctxt))) {
+		error("%s->%s: %s dumping of %s not supported by %s",
+		      caller, __func__, mime_type, XSTRINGIFY(DATA_PARSER_##type),
+		      ctxt.data_parser);
+		rc = ESLURM_DATA_INVALID_PARSER;
+	} else if (db_conn &&
+		   (rc = data_parser_g_assign(parser,
+					      DATA_PARSER_ATTR_DBCONN_PTR,
+					      db_conn))) {
+		error("%s->%s: assigning database connection failed: %s",
+		      caller, __func__, slurm_strerror(rc));
+	} else if (!(buf = init_buf(BUF_SIZE))) {
+		rc = ENOMEM;
+		error("%s->%s: unable to allocate memory for buffer",
+		      caller, __func__);
+	} else if (!(rc = serdes_dump_buf(parser, type, src, src_bytes, buf,
+					  mime_type, flags))) {
+		xassert(get_buf_data(buf)[get_buf_offset(buf)] == '\0');
+
+		*dst_ptr = xfer_buf_data(buf);
+
+		(void) list_for_each(ctxt.warnings, openapi_warn_log_foreach,
+				     NULL);
+		(void) list_for_each(ctxt.errors, openapi_error_log_foreach,
+				     NULL);
+	} else {
+		error("%s->%s: %s dumping failed: %s",
+		      caller, __func__, mime_type, slurm_strerror(rc));
+	}
+
+	FREE_NULL_BUFFER(buf);
+	FREE_NULL_LIST(ctxt.errors);
+	FREE_NULL_LIST(ctxt.warnings);
+	FREE_NULL_DATA_PARSER(parser);
+	return rc;
+}
