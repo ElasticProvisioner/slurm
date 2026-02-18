@@ -151,6 +151,33 @@ extern int sercli_dump_str(data_parser_type_t type, void *db_conn, void *src,
 	sercli_dump_str(DATA_PARSER_##type, db_conn, &(src), sizeof(src), \
 			&(dst), mime_type, flags, __func__)
 
+/*
+ * Parse given string into target struct dst
+ * NOTE: Use SERCLI_PARSE_STR() macro instead of calling directly!
+ * NOTE: errors logged via openapi_error_log_foreach()
+ * NOTE: warnings logged via openapi_warn_log_foreach()
+ * IN parser - return from data_parser_g_new()
+ * IN db_conn - database connection pointer
+ * IN type - expected data_parser type of obj
+ * IN dst - ptr to struct/scalar to populate
+ *	This *must* be a pointer to the object and not just a value of the
+ *	object.
+ * IN dst_bytes - size of object pointed to by dst
+ * IN src - string to parse into obj.
+ * IN src_bytes - number of bytes in string to parse.
+ * IN mime_type - deserialize data using given mime_type
+ * IN caller - __func__ from caller
+ * RET SLURM_SUCCESS or error
+ */
+extern int sercli_parse_str(data_parser_type_t type, void *db_conn, void *dst,
+			    ssize_t dst_bytes, const char *src,
+			    const size_t src_bytes, const char *mime_type,
+			    const char *caller);
+
+#define SERCLI_PARSE_STR(type, db_conn, dst, src, src_bytes, mime_type) \
+	sercli_parse_str(DATA_PARSER_##type, db_conn, &dst, sizeof(dst), src, \
+			 src_bytes, mime_type, __func__)
+
 /* Parse a json or yaml string into a struct. All errors and warnings logged */
 #define DATA_PARSE_FROM_STR(type, str, str_len, dst, db_conn, mime_type, rc) \
 	do { \

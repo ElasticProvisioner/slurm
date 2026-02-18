@@ -275,3 +275,49 @@ extern int sercli_dump_str(data_parser_type_t type, void *db_conn, void *src,
 	FREE_NULL_DATA_PARSER(parser);
 	return rc;
 }
+
+extern int sercli_parse_str(data_parser_type_t type, void *db_conn, void *dst,
+			    ssize_t dst_bytes, const char *src,
+			    const size_t src_bytes, const char *mime_type,
+			    const char *caller)
+{
+	int rc = EINVAL;
+	data_parser_t *parser = NULL;
+	data_parser_dump_cli_ctxt_t ctxt = {
+		.magic = DATA_PARSER_DUMP_CLI_CTXT_MAGIC,
+		.data_parser = SLURM_DATA_PARSER_VERSION,
+	};
+	buf_t buf = SHADOW_BUF_INITIALIZER(src, src_bytes);
+
+	set_buf_offset((&buf), 0);
+
+	ctxt.errors = list_create(free_openapi_resp_error);
+	ctxt.warnings = list_create(free_openapi_resp_warning);
+
+	if (!(parser = data_parser_cli_parser(ctxt.data_parser, &ctxt))) {
+		error("%s->%s: %s parsing of %s not supported by %s",
+		      caller, __func__, mime_type, XSTRINGIFY(DATA_PARSER_##type),
+		      ctxt.data_parser);
+		rc = ESLURM_DATA_INVALID_PARSER;
+	} else if (db_conn &&
+		   (rc = data_parser_g_assign(parser,
+					      DATA_PARSER_ATTR_DBCONN_PTR,
+					      db_conn))) {
+		error("%s->%s: assigning database connection failed: %s",
+		      caller, __func__, slurm_strerror(rc));
+	} else if (!(rc = serdes_parse_buf(parser, type, dst, dst_bytes, &buf,
+					   mime_type))) {
+		(void) list_for_each(ctxt.warnings, openapi_warn_log_foreach,
+				     NULL);
+		(void) list_for_each(ctxt.errors, openapi_error_log_foreach,
+				     NULL);
+	} else {
+		error("%s->%s: %s parsing failed: %s",
+		      caller, __func__, mime_type, slurm_strerror(rc));
+	}
+
+	FREE_NULL_LIST(ctxt.errors);
+	FREE_NULL_LIST(ctxt.warnings);
+	FREE_NULL_DATA_PARSER(parser);
+	return rc;
+}
