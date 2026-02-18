@@ -178,51 +178,6 @@ extern int sercli_parse_str(data_parser_type_t type, void *db_conn, void *dst,
 	sercli_parse_str(DATA_PARSER_##type, db_conn, &dst, sizeof(dst), src, \
 			 src_bytes, mime_type, __func__)
 
-/* Parse a json or yaml string into a struct. All errors and warnings logged */
-#define DATA_PARSE_FROM_STR(type, str, str_len, dst, db_conn, mime_type, rc) \
-	do { \
-		data_t *src = NULL; \
-		data_parser_dump_cli_ctxt_t ctxt = { 0 }; \
-		data_t *parent_path = NULL; \
-		data_parser_t *parser = NULL; \
-\
-		rc = serialize_g_string_to_data(&src, str, str_len, \
-						mime_type); \
-		if (rc) { \
-			FREE_NULL_DATA(src); \
-			break; \
-		} \
-\
-		ctxt.magic = DATA_PARSER_DUMP_CLI_CTXT_MAGIC; \
-		ctxt.data_parser = SLURM_DATA_PARSER_VERSION; \
-		ctxt.errors = list_create(free_openapi_resp_error); \
-		ctxt.warnings = list_create(free_openapi_resp_warning); \
-		parser = data_parser_cli_parser(ctxt.data_parser, &ctxt); \
-		if (!parser) { \
-			rc = ESLURM_DATA_INVALID_PARSER; \
-			error("%s parsing of %s not supported by %s",          \
-			      mime_type, XSTRINGIFY(DATA_PARSER_##type),       \
-			      ctxt.data_parser); \
-		} else { \
-			if (db_conn) \
-				data_parser_g_assign( \
-					parser, DATA_PARSER_ATTR_DBCONN_PTR, \
-					db_conn); \
-			parent_path = data_set_list(data_new()); \
-			(void) data_convert_tree(src, DATA_TYPE_NONE); \
-			rc = DATA_PARSE(parser, type, dst, src, parent_path); \
-			list_for_each(ctxt.warnings, openapi_warn_log_foreach, \
-				      NULL); \
-			list_for_each(ctxt.errors, openapi_error_log_foreach, \
-				      NULL); \
-		} \
-		FREE_NULL_DATA(src); \
-		FREE_NULL_LIST(ctxt.errors); \
-		FREE_NULL_LIST(ctxt.warnings); \
-		FREE_NULL_DATA(parent_path); \
-		FREE_NULL_DATA_PARSER(parser); \
-	} while (false)
-
 /*
  * Create data_parser instance for CLI
  * IN data_parser - data_parser parameters
