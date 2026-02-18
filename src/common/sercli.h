@@ -151,50 +151,6 @@ extern int sercli_dump_str(data_parser_type_t type, void *db_conn, void *src,
 	sercli_dump_str(DATA_PARSER_##type, db_conn, &(src), sizeof(src), \
 			&(dst), mime_type, flags, __func__)
 
-/* Dump a struct into a json or yaml string. All errors and warnings logged */
-#define DATA_DUMP_TO_STR(type, src, ret_str, db_conn, mime_type, sflags, rc) \
-	do { \
-		data_parser_t *parser = NULL; \
-		data_parser_dump_cli_ctxt_t ctxt = { 0 }; \
-		data_t *dst = NULL; \
-\
-		ctxt.magic = DATA_PARSER_DUMP_CLI_CTXT_MAGIC; \
-		ctxt.data_parser = SLURM_DATA_PARSER_VERSION; \
-		ctxt.errors = list_create(free_openapi_resp_error); \
-		ctxt.warnings = list_create(free_openapi_resp_warning); \
-		parser = data_parser_cli_parser(ctxt.data_parser, &ctxt); \
-		if (!parser) { \
-			rc = ESLURM_DATA_INVALID_PARSER; \
-			error("%s parsing of %s not supported by %s",          \
-			      mime_type, XSTRINGIFY(DATA_PARSER_##type),       \
-			      ctxt.data_parser); \
-		} else { \
-			if (db_conn) \
-				data_parser_g_assign( \
-					parser, DATA_PARSER_ATTR_DBCONN_PTR, \
-					db_conn); \
-			dst = data_new(); \
-			DATA_DUMP(parser, type, src, dst); \
-			list_for_each(ctxt.warnings, openapi_warn_log_foreach, \
-				      NULL); \
-			list_for_each(ctxt.errors, openapi_error_log_foreach, \
-				      NULL); \
-		} \
-\
-		if (data_get_type(dst) != DATA_TYPE_NULL) { \
-			serializer_flags_t tmp_sflags = sflags; \
-\
-			if (data_parser_g_is_complex(parser)) \
-				tmp_sflags |= SER_FLAGS_COMPLEX; \
-			serialize_g_data_to_string(&ret_str, NULL, dst, \
-						   mime_type, tmp_sflags); \
-		} \
-		FREE_NULL_DATA(dst); \
-		FREE_NULL_LIST(ctxt.errors); \
-		FREE_NULL_LIST(ctxt.warnings); \
-		FREE_NULL_DATA_PARSER(parser); \
-	} while (false)
-
 /* Parse a json or yaml string into a struct. All errors and warnings logged */
 #define DATA_PARSE_FROM_STR(type, str, str_len, dst, db_conn, mime_type, rc) \
 	do { \
