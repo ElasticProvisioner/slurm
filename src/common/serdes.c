@@ -33,4 +33,113 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
 \*****************************************************************************/
 
+#include "slurm/slurm_errno.h"
+
+#include "src/common/data.h"
 #include "src/common/serdes.h"
+#include "src/common/timers.h"
+#include "src/common/xmalloc.h"
+
+#include "src/interfaces/data_parser.h"
+#include "src/interfaces/serializer.h"
+
+/*
+ * Serializer plugin does doesn't support directly parsing from struct to
+ * mime_type format. We need to instead parse into data_t into the mime_type.
+ */
+static int _indirect_parse(serialize_parse_state_t **state_ptr,
+			   data_parser_t *parser, data_parser_type_t type,
+			   void *dst, ssize_t dst_bytes, buf_t *src,
+			   const char *mime_type)
+{
+	DEF_TIMERS;
+	const void *ptr = (((void *) get_buf_data(src)) + get_buf_offset(src));
+	const ssize_t bytes = remaining_buf(src);
+	data_t *d = NULL;
+	data_t *parent_path = NULL;
+	int rc = EINVAL;
+
+	START_TIMER;
+
+	parent_path = data_set_list(data_new());
+
+	if (!(rc = serialize_g_string_to_data(&d, ptr, bytes, mime_type)))
+		rc = data_parser_g_parse(parser, type, dst, dst_bytes, d,
+					 parent_path);
+
+	/* Treat all bytes as read */
+	if (!rc)
+		set_buf_offset(src, size_buf(src));
+
+	FREE_NULL_DATA(d);
+	FREE_NULL_DATA(parent_path);
+	END_TIMER2(__func__);
+
+	return rc;
+}
+
+extern int serdes_parse(serialize_parse_state_t **state_ptr,
+			data_parser_t *parser, data_parser_type_t type,
+			void *dst, ssize_t dst_bytes, buf_t *src,
+			const char *mime_type)
+{
+	int rc = serialize_g_parse(state_ptr, parser, type, dst, dst_bytes, src,
+				   mime_type);
+
+	if (rc != ESLURM_NOT_SUPPORTED)
+		return rc;
+
+	return _indirect_parse(state_ptr, parser, type, dst, dst_bytes, src,
+			       mime_type);
+}
+
+/*
+ * Serializer plugin does doesn't support directly dumping from mime_type format
+ * to struct. We need to instead dump into data_t from the mime_type and then
+ * dump into the struct.
+ */
+static int _indirect_dump(serialize_dump_state_t **state_ptr,
+			  data_parser_t *parser, data_parser_type_t type,
+			  void *src, ssize_t src_bytes, buf_t *dst,
+			  const char *mime_type, serializer_flags_t flags)
+{
+	DEF_TIMERS;
+	data_t *d = NULL;
+	size_t length = 0;
+	char *buf = NULL;
+	int rc = EINVAL;
+
+	START_TIMER;
+
+	d = data_new();
+
+	if (!(rc = data_parser_g_dump(parser, type, src, src_bytes, d))) {
+		if (data_parser_g_is_complex(parser))
+			flags |= SER_FLAGS_COMPLEX;
+
+		if (!(rc = serialize_g_data_to_string(&buf, &length, d,
+						      mime_type, flags)))
+			assign_buf(dst, &buf, length);
+	}
+
+	xfree(buf);
+	FREE_NULL_DATA(d);
+	END_TIMER2(__func__);
+
+	return rc;
+}
+
+extern int serdes_dump(serialize_dump_state_t **state_ptr,
+		       data_parser_t *parser, data_parser_type_t type,
+		       void *src, ssize_t src_bytes, buf_t *dst,
+		       const char *mime_type, serializer_flags_t flags)
+{
+	int rc = serialize_g_dump(state_ptr, parser, type, src, src_bytes, dst,
+				  mime_type, flags);
+
+	if (rc != ESLURM_NOT_SUPPORTED)
+		return rc;
+
+	return _indirect_dump(state_ptr, parser, type, src, src_bytes, dst,
+			      mime_type, flags);
+}

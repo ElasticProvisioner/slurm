@@ -36,4 +36,62 @@
 #ifndef _COMMON_SERDES_H
 #define _COMMON_SERDES_H
 
+#include "src/interfaces/serializer.h"
+
+/*
+ * Parse given (potentially partial) string buffer into target struct dst
+ * NOTE: Use SERDES_PARSE() macro instead of calling directly!
+ * IN/OUT state_ptr - Pointer populated with parsing state
+ *	If start_ptr is !NULL, then serializer expects another call to
+ *	serialize_g_parse().
+ *	Passing a NULL src will always release state_ptr.
+ * IN parser - return from data_parser_g_new()
+ * IN type - expected data_parser type of obj
+ * IN dst - ptr to struct/scalar to populate
+ *	This *must* be a pointer to the object and not just a value of the
+ *	object.
+ * IN dst_bytes - size of object pointed to by dst
+ * IN src - string buffer to parse into obj.
+ *	[offset, size) will be string to be read.
+ *	src offset will be set with how many bytes have been processed
+ * IN mime_type - deserialize data using given mime_type
+ * RET SLURM_SUCCESS or error
+ */
+extern int serdes_parse(serialize_parse_state_t **state_ptr,
+			data_parser_t *parser, data_parser_type_t type,
+			void *dst, ssize_t dst_bytes, buf_t *src,
+			const char *mime_type);
+
+#define SERDES_PARSE(state, parser, type, dst, src, mime_type) \
+	serdes_parse(&state, parser, DATA_PARSER_##type, &dst, sizeof(dst), \
+		     src, mime_type)
+
+/*
+ * Dump given target struct src into fixed size buffer
+ * NOTE: Use SERDES_DUMP() macro instead of calling directly!
+ * IN/OUT state_ptr - Pointer populated with parsing state
+ *	If state_ptr is !NULL, then serializer expects another call to
+ *	serialize_g_dump().
+ *	Passing a NULL dst will always release state_ptr.
+ * IN parser - return from data_parser_g_new()
+ * IN type - data_parser type of obj
+ * IN src - ptr to struct/scalar to dump to data_t
+ *	This *must* be a pointer to the object and not just a value of the object.
+ * IN src_bytes - size of object pointed to by src
+ * IN/OUT dst - buffer to populate with serialized output.
+ *	Writes will try to honor the size of the buffer (but may resize it).
+ *	Offset to indicate the bytes populated.
+ * IN flags - optional flags to specify to serilzier to change presentation of
+ *	data
+ * RET SLURM_SUCCESS or error
+ */
+extern int serdes_dump(serialize_dump_state_t **state_ptr,
+		       data_parser_t *parser, data_parser_type_t type,
+		       void *src, ssize_t src_bytes, buf_t *dst,
+		       const char *mime_type, serializer_flags_t flags);
+
+#define SERDES_DUMP(state, parser, type, src, dst, mime_type, flags) \
+	serdes_dump(&state, parser, DATA_PARSER_##type, &src, sizeof(src), \
+		    dst, mime_type, flags)
+
 #endif
