@@ -63,7 +63,7 @@ typedef probe_status_t (*probe_query_t)(probe_log_t *log, void *arg);
 
 /*
  * Register probe query function
- * IN name - name of service to log
+ * IN name - name of service to log. string will be copied.
  * IN query - callback function to query to poll status
  * IN arg - Arbitrary pointer to pass to query()
  */

@@ -44,12 +44,13 @@
 #include "src/common/probes.h"
 #include "src/common/xassert.h"
 #include "src/common/xmalloc.h"
+#include "src/common/xstring.h"
 
 #define PROBE_MAGIC 0x3afabfaf
 
 typedef struct {
 	int magic; /* PROBE_MAGIC */
-	const char *name;
+	char *name;
 	probe_query_t query;
 	void *arg;
 } probe_t;
@@ -82,6 +83,7 @@ static void _free_probe(void *ptr)
 
 	xassert(probe->magic == PROBE_MAGIC);
 	probe->magic = ~PROBE_MAGIC;
+	xfree(probe->name);
 	xfree(probe);
 }
 
@@ -107,7 +109,7 @@ extern void probe_register(const char *name, probe_query_t query, void *arg)
 	probe = xmalloc(sizeof(*probe));
 	*probe = (probe_t) {
 		.magic = PROBE_MAGIC,
-		.name = name,
+		.name = xstrdup(name),
 		.query = query,
 		.arg = arg,
 	};
