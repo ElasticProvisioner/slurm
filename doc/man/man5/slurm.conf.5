@@ -6094,6 +6094,7 @@ The default value is 60 nodes per minute.
 \fBSuspendTime\fR
 Nodes which remain idle or down for this number of seconds will be placed into
 power save mode by \fBSuspendProgram\fR.
+This value can be overridden on a per\-partition or per\-node basis.
 Setting \fBSuspendTime\fR to anything but INFINITE (or \-1) will enable power
 save mode. INFINITE is the default.
 .IP
@@ -7281,6 +7282,20 @@ The default value is 1.
 .IP
 
 .TP
+\fBSuspendTime\fR
+Nodes which remain idle or down for this number of seconds will be placed into
+power save mode by \fBSuspendProgram\fR.
+This value takes precedence over the partition\-level and global
+\fBSuspendTime\fR settings for the specified nodes.
+For nodes that are in multiple partitions with \fBSuspendTime\fR configured,
+the node\-level value takes precedence. If not set on the node, the partition
+and then global values are used.
+Setting \fBSuspendTime\fR to INFINITE will disable suspending of these nodes.
+Setting \fBSuspendTime\fR to anything but INFINITE (or \-1) will enable power
+save mode.
+.IP
+
+.TP
 \fBState\fR
 State of the node with respect to the initiation of user jobs.
 Acceptable values are \fICLOUD\fR, \fIDOWN\fR, \fIDRAIN\fR, \fIFAIL\fR,
@@ -8192,6 +8207,8 @@ power save mode by \fBSuspendProgram\fR.
 For nodes that are in multiple partitions with this option set,
 the highest time will take effect. If not set on any partition, the node will
 use the \fBSuspendTime\fR value set for the entire cluster.
+A \fBSuspendTime\fR value set on a \fBNodeName\fR line takes precedence over
+this partition\-level value.
 Setting \fBSuspendTime\fR to INFINITE will disable suspending of nodes in this
 partition.
 Setting \fBSuspendTime\fR to anything but INFINITE (or \-1) will enable power
