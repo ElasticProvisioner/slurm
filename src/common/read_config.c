@@ -549,6 +549,7 @@ static int _parse_nodename(void **dest, slurm_parser_enum_t type,
 		{"Sockets", S_P_UINT16},
 		{"SocketsPerBoard", S_P_UINT16},
 		{"State", S_P_STRING},
+		{"SuspendTime", S_P_STRING},
 		{"ThreadsPerCore", S_P_UINT16},
 		{"TmpDisk", S_P_UINT32},
 		{"Topology", S_P_STRING},
@@ -600,6 +601,7 @@ static int _parse_nodename(void **dest, slurm_parser_enum_t type,
 		bool no_sockets_per_board = false;
 		uint16_t sockets_per_board = 0;
 		char *cpu_bind = NULL;
+		char *tmp = NULL;
 
 		n = _create_conf_node();
 		dflt = default_nodename_tbl;
@@ -710,6 +712,17 @@ static int _parse_nodename(void **dest, slurm_parser_enum_t type,
 		     s_p_get_uint32(&n->weight, "Weight", dflt)) &&
 		     (n->weight == INFINITE))
 			n->weight -= 1;
+
+		if (s_p_get_string(&tmp, "SuspendTime", tbl) ||
+		    s_p_get_string(&tmp, "SuspendTime", dflt)) {
+			if (_parse_suspend_time(tmp, &n->suspend_time)) {
+				error("NodeNames=%s SuspendTime=%s is invalid",
+				      n->nodenames, tmp);
+				xfree(tmp);
+				return -1;
+			}
+			xfree(tmp);
+		}
 
 		s_p_hashtbl_destroy(tbl);
 
@@ -882,6 +895,7 @@ static void _init_conf_node(slurm_conf_node_t *conf_node)
 	conf_node->cores = 1;
 	conf_node->cpus = 1;
 	conf_node->real_memory = 1;
+	conf_node->suspend_time = NO_VAL;
 	conf_node->threads = 1;
 	conf_node->tot_sockets = 1;
 	conf_node->weight = 1;

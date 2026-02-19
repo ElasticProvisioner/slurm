@@ -848,9 +848,14 @@ static int _set_partition_options(void *x, void *ignored)
 
 	for (int i = 0;
 	     (node_ptr = next_node_bitmap(part_ptr->node_bitmap, &i)); i++) {
+		/*
+		 * Only update suspend_time from partition if not already set
+		 * at node level (from NodeName configuration)
+		 */
 		if (node_ptr->suspend_time == NO_VAL)
 			node_ptr->suspend_time = part_ptr->suspend_time;
-		else if (part_ptr->suspend_time != NO_VAL)
+		else if (node_ptr->config_ptr->suspend_time == NO_VAL &&
+			 part_ptr->suspend_time != NO_VAL)
 			node_ptr->suspend_time = MAX(node_ptr->suspend_time,
 						     part_ptr->suspend_time);
 
@@ -1263,7 +1268,7 @@ extern void power_save_set_timeouts(bool *suspend_time_set)
 
 	/* Reset timeouts so new values can be calculated. */
 	for (int i = 0; (node_ptr = next_node(&i)); i++) {
-		node_ptr->suspend_time = NO_VAL;
+		node_ptr->suspend_time = node_ptr->config_ptr->suspend_time;
 		node_ptr->suspend_timeout = NO_VAL16;
 		node_ptr->resume_timeout = NO_VAL16;
 	}
@@ -1271,7 +1276,7 @@ extern void power_save_set_timeouts(bool *suspend_time_set)
 	/* Figure out per-partition options and push to node level. */
 	list_for_each(part_list, _set_partition_options, NULL);
 
-	/* Apply global options to node level if not set at partition level. */
+	/* Apply global options to node level if not set at partition or node level. */
 	for (int i = 0; (node_ptr = next_node(&i)); i++) {
 		node_ptr->suspend_time =
 			((node_ptr->suspend_time == NO_VAL) ?

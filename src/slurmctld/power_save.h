@@ -77,7 +77,7 @@ extern int power_job_reboot(bitstr_t *node_bitmap, job_record_t *job_ptr,
 extern void power_save_exc_setup(void);
 
 /*
- * Set node power times based on global and per-partition settings.
+ * Set node power times based on node, partition, and global settings.
  *
  * OUT (optional) suspend_time_set - return True if any node has a finite
  *                                   suspend_time configured.
