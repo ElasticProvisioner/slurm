@@ -835,16 +835,10 @@ static void _clear_power_config(void)
 	FREE_NULL_LIST(partial_node_list);
 }
 
-static int _set_partition_options(void *x, void *arg)
+static int _set_partition_options(void *x, void *ignored)
 {
 	part_record_t *part_ptr = (part_record_t *)x;
 	node_record_t *node_ptr;
-	bool *suspend_time_set = (bool *)arg;
-
-	if (suspend_time_set &&
-	    (part_ptr->suspend_time != INFINITE) &&
-	    (part_ptr->suspend_time != NO_VAL))
-		*suspend_time_set = true;
 
 	if (part_ptr->resume_timeout != NO_VAL16)
 		max_timeout = MAX(max_timeout, part_ptr->resume_timeout);
@@ -1001,7 +995,7 @@ static void power_save_rl_setup(void)
 static int _init_power_config(void)
 {
 	char *tmp_ptr;
-	bool partition_suspend_time_set = false;
+	bool suspend_time_set = false;
 
 	last_log	= 0;
 	suspend_rate = slurm_conf.suspend_rate;
@@ -1032,10 +1026,10 @@ static int _init_power_config(void)
 			       NULL, 10);
 	}
 
-	power_save_set_timeouts(&partition_suspend_time_set);
+	power_save_set_timeouts(&suspend_time_set);
 
 	if ((slurm_conf.suspend_time == INFINITE) &&
-	    !partition_suspend_time_set) { /* not an error */
+	    !suspend_time_set) { /* not an error */
 		debug("power_save module disabled, SuspendTime < 0");
 		return -1;
 	}
@@ -1259,7 +1253,7 @@ fini:
 	return NULL;
 }
 
-extern void power_save_set_timeouts(bool *partition_suspend_time_set)
+extern void power_save_set_timeouts(bool *suspend_time_set)
 {
 	node_record_t *node_ptr;
 
@@ -1275,8 +1269,7 @@ extern void power_save_set_timeouts(bool *partition_suspend_time_set)
 	}
 
 	/* Figure out per-partition options and push to node level. */
-	list_for_each(part_list, _set_partition_options,
-		      partition_suspend_time_set);
+	list_for_each(part_list, _set_partition_options, NULL);
 
 	/* Apply global options to node level if not set at partition level. */
 	for (int i = 0; (node_ptr = next_node(&i)); i++) {
@@ -1284,6 +1277,10 @@ extern void power_save_set_timeouts(bool *partition_suspend_time_set)
 			((node_ptr->suspend_time == NO_VAL) ?
 				slurm_conf.suspend_time :
 				node_ptr->suspend_time);
+		if (suspend_time_set &&
+		    (node_ptr->suspend_time != INFINITE) &&
+		    (node_ptr->suspend_time != NO_VAL))
+			*suspend_time_set = true;
 		node_ptr->suspend_timeout =
 			((node_ptr->suspend_timeout == NO_VAL16) ?
 				slurm_conf.suspend_timeout :

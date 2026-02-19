@@ -79,9 +79,9 @@ extern void power_save_exc_setup(void);
 /*
  * Set node power times based on global and per-partition settings.
  *
- * OUT (optional) partition_suspend_time_set - return True if any partition has
- *                                             suspend_time set.
+ * OUT (optional) suspend_time_set - return True if any node has a finite
+ *                                   suspend_time configured.
  */
-extern void power_save_set_timeouts(bool *partition_suspend_time_set);
+extern void power_save_set_timeouts(bool *suspend_time_set);
 
 #endif /* _HAVE_POWER_SAVE_H */
