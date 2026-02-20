@@ -73,11 +73,16 @@ typedef int (*openapi_ctxt_handler_t)(openapi_ctxt_t *ctxt);
 typedef enum {
 	OP_BIND_INVALID = 0,
 	OP_BIND_NONE = SLURM_BIT(1),
-	OP_BIND_DATA_PARSER = SLURM_BIT(2), /* populate {data_parser} in URL */
-	OP_BIND_OPENAPI_RESP_FMT = SLURM_BIT(3), /* populate errors,warnings,meta */
-	OP_BIND_HIDDEN_OAS = SLURM_BIT(4), /* Hide from OpenAPI specification */
-	OP_BIND_NO_SLURMDBD = SLURM_BIT(5), /* Do not prepare slurmdbd connection */
-	OP_BIND_REQUIRE_SLURMDBD = SLURM_BIT(6), /* Require slurmdbd connection or don't call path */
+	/* populate {data_parser} in URL */
+	OP_BIND_DATA_PARSER = SLURM_BIT(2),
+	/* populate errors,warnings,meta */
+	OP_BIND_OPENAPI_RESP_FMT = SLURM_BIT(3),
+	/* Hide from OpenAPI specification */
+	OP_BIND_HIDDEN_OAS = SLURM_BIT(4),
+	/* Do not prepare slurmdbd connection */
+	OP_BIND_NO_SLURMDBD = SLURM_BIT(5),
+	/* Require slurmdbd connection or don't call path */
+	OP_BIND_REQUIRE_SLURMDBD = SLURM_BIT(6),
 	OP_BIND_INVALID_MAX = INFINITE16
 } op_bind_flags_t;
 
