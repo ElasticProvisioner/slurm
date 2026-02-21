@@ -392,6 +392,81 @@ extern data_t *parse_url_path(const char *path, bool convert_types,
 	return d;
 }
 
+extern int url_path_walk(const char *path, bool allow_templates,
+			 on_url_path_entry_t on_entry, void *arg)
+{
+	int rc = SLURM_SUCCESS;
+	char *buffer = NULL, *buffer_at = NULL;
+
+	/* extract each word */
+	for (const char *ptr = path; !rc && (*ptr != '\0'); ptr++) {
+		if (_is_valid_url_char(*ptr)) {
+			char str[2] = { *ptr, '\0' };
+			xstrcatat(buffer, &buffer_at, str);
+			continue;
+		}
+
+		switch (*ptr) {
+		case '{': /* OASv3.0.3 section 4.7.8.2 template variable */
+			if (!allow_templates) {
+				debug("%s: unexpected OAS template character: %c",
+				      __func__, *ptr);
+				rc = ESLURM_URL_INVALID_FORMATING;
+			} else {
+				/* find end of template */
+				char *end = xstrstr(ptr, "}");
+
+				if (!end) {
+					debug("%s: missing terminated OAS template character: }",
+					      __func__);
+					rc = ESLURM_URL_INVALID_FORMATING;
+					break;
+				}
+
+				xstrncatat(buffer, &buffer_at, ptr,
+					   (end - ptr + 1));
+				rc = on_entry(buffer, true, arg);
+				ptr = end;
+			}
+			break;
+		case '%': /* rfc3986 */
+		{
+			const char c = url_decode_escape_seq(ptr);
+			if (c != '\0') {
+				char str[2] = { c, '\0' };
+
+				/* shift past the hex value */
+				ptr += 2;
+
+				xstrcatat(buffer, &buffer_at, str);
+			} else {
+				debug("%s: invalid URL escape sequence: %s",
+				      __func__, ptr);
+				rc = ESLURM_URL_UNSUPPORTED_FORMAT;
+			}
+			break;
+		}
+		case '/': /* rfc3986 */
+			if (buffer != NULL)
+				rc = on_entry(buffer, false, arg);
+			break;
+		default:
+			debug("%s: unexpected URL character: %c",
+			      __func__, *ptr);
+			rc = ESLURM_URL_INVALID_FORMATING;
+		}
+
+		xfree(buffer);
+		buffer_at = NULL;
+	}
+
+	/* last part of path */
+	if (!rc && buffer)
+		rc = on_entry(buffer, false, arg);
+
+	return rc;
+}
+
 extern http_status_code_t get_http_status_code(const char *str)
 {
 	if (isdigit(str[0])) {
