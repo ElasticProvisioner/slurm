@@ -79,7 +79,6 @@ typedef enum {
  */
 typedef struct {
 	char *entry;
-	char *name;
 	entry_type_t type;
 	openapi_type_t parameter;
 } entry_t;
@@ -389,13 +388,11 @@ static void _free_entry_list(entry_t *entry, int tag,
 		return;
 
 	while (itr->type) {
-		debug5("%s: remove path tag:%d method:%s entry:%s name:%s",
-		       __func__, tag,
-		       (method ? get_http_method_string(method->method) :
-				       "N/A"),
-		       itr->entry, itr->name);
+		debug5("%s: remove path tag:%d method:%s entry:%s",
+		       __func__, tag, (method ?
+				       get_http_method_string(method->method) :
+				       "N/A"), itr->entry);
 		xfree(itr->entry);
-		xfree(itr->name);
 		itr++;
 	}
 
@@ -454,16 +451,10 @@ static int _on_parse_url_entry(const char *token, bool template, void *arg)
 
 	if (template) {
 		entry->type = OPENAPI_PATH_ENTRY_MATCH_PARAMETER;
-		entry->name = xstrdup(token);
-
-		debug5("%s: parameter %s at entry %s",
-		       __func__, entry->name, token);
+		debug5("%s: parameter %s at entry", __func__, token);
 	} else { /* not a variable */
 		entry->type = OPENAPI_PATH_ENTRY_MATCH_STRING;
-		entry->name = NULL;
-
-		debug5("%s: string match entry %s",
-		       __func__, token);
+		debug5("%s: string match entry %s", __func__, token);
 	}
 
 	args->entry++;
@@ -547,7 +538,6 @@ static void _clone_entries(entry_t **dst_ptr, entry_t *src, int count)
 
 	for (; src->type; src++, dst++) {
 		dst->entry = xstrdup(src->entry);
-		dst->name = xstrdup(src->name);
 		dst->type = src->type;
 		dst->parameter = src->parameter;
 	}
@@ -701,12 +691,13 @@ extern int register_path_binding(const char *in_path,
 			if (e->type == OPENAPI_PATH_ENTRY_MATCH_PARAMETER)
 				e->parameter =
 					data_parser_g_resolve_openapi_type(
-						parser, m->parameters, e->name);
+						parser, m->parameters,
+						e->entry);
 
-			debug5("%s: add binded path %s entry: method=%s tag=%d entry=%s name=%s parameter=%s entry_type=%s",
+			debug5("%s: add binded path %s entry: method=%s tag=%d entry=%s parameter=%s entry_type=%s",
 			       __func__, path,
 			       get_http_method_string(m->method), tag, e->entry,
-			       e->name, openapi_type_to_string(e->parameter),
+			       openapi_type_to_string(e->parameter),
 			       _get_entry_type_string(e->type));
 		}
 
@@ -737,7 +728,7 @@ static bool _match_param(const data_t *data, match_path_from_data_t *args)
 	{
 		if (data_convert_type(match, DATA_TYPE_FLOAT) ==
 		    DATA_TYPE_FLOAT) {
-			data_set_float(data_key_set(params, entry->name),
+			data_set_float(data_key_set(params, entry->entry),
 				       data_get_float(match));
 			matched = true;
 		}
@@ -747,7 +738,7 @@ static bool _match_param(const data_t *data, match_path_from_data_t *args)
 	{
 		if (data_convert_type(match, DATA_TYPE_INT_64) ==
 		    DATA_TYPE_INT_64) {
-			data_set_int(data_key_set(params, entry->name),
+			data_set_int(data_key_set(params, entry->entry),
 				     data_get_int(match));
 			matched = true;
 		}
@@ -761,7 +752,7 @@ static bool _match_param(const data_t *data, match_path_from_data_t *args)
 	{
 		if (data_convert_type(match, DATA_TYPE_STRING) ==
 		    DATA_TYPE_STRING) {
-			data_set_string(data_key_set(params, entry->name),
+			data_set_string(data_key_set(params, entry->entry),
 					data_get_string(match));
 			matched = true;
 		}
@@ -774,7 +765,7 @@ static bool _match_param(const data_t *data, match_path_from_data_t *args)
 		data_get_string_converted(data, &str);
 
 		debug5("%s: parameter %s[%s]->%s[%s] result=%s",
-		       __func__, entry->name,
+		       __func__, entry->entry,
 		       openapi_type_to_string(entry->parameter),
 		       str, data_get_type_string(data),
 		       (matched ? "matched" : "failed"));
@@ -831,7 +822,7 @@ static char *_entry_to_string(entry_t *entry)
 			break;
 		case OPENAPI_PATH_ENTRY_MATCH_PARAMETER:
 			data_set_string_fmt(data_list_append(d), "{%s}",
-					    entry->name);
+					    entry->entry);
 			break;
 		case OPENAPI_PATH_ENTRY_UNKNOWN:
 		case OPENAPI_PATH_ENTRY_MAX:
