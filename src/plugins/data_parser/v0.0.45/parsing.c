@@ -92,6 +92,13 @@ typedef struct {
 	data_t *path;
 } parse_marray_args_t;
 
+#define MARRAY_PATH_ARGS_MAGIC 0xeddb9fff
+
+typedef struct {
+	int magic; /* MARRAY_PATH_ARGS_MAGIC */
+	data_t *dst;
+} marray_path_args_t;
+
 static void _set_flag_bit(const parser_t *const parser, void *dst,
 			  const flag_bit_t *bit, bool matched, const char *path,
 			  data_t *src)
@@ -635,13 +642,27 @@ static void _parser_linked_flag(args_t *args, const parser_t *const array,
 	FREE_NULL_DATA(ppath);
 }
 
+static int _on_marray_append_path(const char *entry, bool template, void *arg)
+{
+	marray_path_args_t *args = arg;
+
+	xassert(args->magic == MARRAY_PATH_ARGS_MAGIC);
+	xassert(!template);
+
+	(void) data_set_string(data_list_append(args->dst), entry);
+	return SLURM_SUCCESS;
+}
+
 static bool _match_array_path(const parser_t *const parser, data_t *path)
 {
 	bool match;
-	data_t *fpath = data_new();
+	data_t *fpath = data_set_list(data_new());
+	marray_path_args_t args = {
+		.magic = MARRAY_PATH_ARGS_MAGIC,
+		.dst = fpath,
+	};
 
-	(void) data_list_split_str(fpath, parser->key, "/");
-
+	(void) url_path_walk(parser->key, false, _on_marray_append_path, &args);
 	match = data_check_match(fpath, path, false);
 
 	FREE_NULL_DATA(fpath);
