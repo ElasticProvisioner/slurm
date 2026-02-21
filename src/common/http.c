@@ -212,6 +212,14 @@ static const struct {
 };
 #undef T
 
+#define PARSE_URL_ARGS_MAGIC 0x8aa83331
+
+typedef struct {
+	int magic; /* PARSE_URL_ARGS_MAGIC */
+	bool convert_types;
+	data_t *paths;
+} parse_url_args_t;
+
 extern int url_get_scheme(const char *str, size_t bytes,
 			  url_scheme_t *scheme_ptr)
 {
@@ -296,22 +304,26 @@ extern unsigned char url_decode_escape_seq(const char *ptr)
 	}
 }
 
-static int _add_path(data_t *d, char **buffer, bool convert_types)
+static int _add_path(const char *entry, bool template, void *arg)
 {
-	if (!xstrcasecmp(*buffer, ".")) {
+	parse_url_args_t *args = arg;
+	const bool convert_types = args->convert_types;
+	data_t *d = args->paths;
+
+	xassert(args->magic == PARSE_URL_ARGS_MAGIC);
+
+	if (!xstrcasecmp(entry, ".")) {
 		debug5("%s: ignoring path . entry", __func__);
-	} else if (!xstrcasecmp(*buffer, "..")) {
+	} else if (!xstrcasecmp(entry, "..")) {
 		//TODO: pop last directory off sequence instead of fail
 		debug5("%s: rejecting path .. entry", __func__);
 		return SLURM_ERROR;
 	} else {
 		data_t *c = data_list_append(d);
-		data_set_string(c, *buffer);
+		data_set_string(c, entry);
 
 		if (convert_types)
 			(void) data_convert_type(c, DATA_TYPE_NONE);
-
-		xfree(*buffer);
 	}
 
 	return SLURM_SUCCESS;
@@ -320,76 +332,16 @@ static int _add_path(data_t *d, char **buffer, bool convert_types)
 extern data_t *parse_url_path(const char *path, bool convert_types,
 			      bool allow_templates)
 {
-	int rc = SLURM_SUCCESS;
-	data_t *d = data_set_list(data_new());
-	char *buffer = NULL;
+	parse_url_args_t args = {
+		.magic = PARSE_URL_ARGS_MAGIC,
+		.convert_types = convert_types,
+		.paths = data_set_list(data_new()),
+	};
 
-	/* extract each word */
-	for (const char *ptr = path; !rc && *ptr != '\0'; ++ptr) {
-		if (_is_valid_url_char(*ptr)) {
-			xstrcatchar(buffer, *ptr);
-			continue;
-		}
+	if (url_path_walk(path, allow_templates, _add_path, &args))
+		FREE_NULL_DATA(args.paths);
 
-		switch (*ptr) {
-		case '{': /* OASv3.0.3 section 4.7.8.2 template variable */
-			if (!allow_templates) {
-				debug("%s: unexpected OAS template character: %c",
-				      __func__, *ptr);
-				rc = SLURM_ERROR;
-				break;
-			} else {
-				/* find end of template */
-				char *end = xstrstr(ptr, "}");
-
-				if (!end) {
-					debug("%s: missing terminated OAS template character: }",
-					      __func__);
-					rc = SLURM_ERROR;
-					break;
-				}
-
-				xstrncat(buffer, ptr, (end - ptr + 1));
-				ptr = end;
-				break;
-			}
-		case '%': /* rfc3986 */
-		{
-			const char c = url_decode_escape_seq(ptr);
-			if (c != '\0') {
-				/* shift past the hex value */
-				ptr += 2;
-
-				xstrcatchar(buffer, c);
-			} else {
-				debug("%s: invalid URL escape sequence: %s",
-				      __func__, ptr);
-				rc = SLURM_ERROR;
-				break;
-			}
-			break;
-		}
-		case '/': /* rfc3986 */
-			if (buffer != NULL)
-				rc = _add_path(d, &buffer, convert_types);
-			break;
-		default:
-			debug("%s: unexpected URL character: %c",
-			      __func__, *ptr);
-			rc = SLURM_ERROR;
-		}
-	}
-
-	/* last part of path */
-	if (!rc && buffer != NULL)
-		rc = _add_path(d, &buffer, convert_types);
-
-	if (rc) {
-		FREE_NULL_DATA(d);
-		return NULL;
-	}
-
-	return d;
+	return args.paths;
 }
 
 extern int url_path_walk(const char *path, bool allow_templates,
