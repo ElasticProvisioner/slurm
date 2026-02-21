@@ -33,6 +33,7 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
 \*****************************************************************************/
 
+#include "slurm/slurm_errno.h"
 #include "src/common/data.h"
 #include "src/common/http.h"
 #include "src/common/plugrack.h"
@@ -46,6 +47,7 @@
 #include "src/slurmrestd/operations.h"
 
 #define OPENAPI_MAJOR_TYPE "openapi"
+#define MAX_URL_PATH_DEPTH 1024
 
 typedef struct {
 	int (*init)(void);
@@ -143,6 +145,14 @@ typedef struct {
 	/* tracked references per data_parser */
 	void **references;
 } openapi_spec_t;
+
+#define URL_PARSE_ARGS_MAGIC 0x0abfccaa
+
+typedef struct {
+	int magic; /* URL_PARSE_ARGS_MAGIC */
+	int count;
+	entry_t *entry;
+} url_parse_args_t;
 
 static list_t *paths = NULL;
 static int path_tag_counter = 0;
@@ -419,76 +429,71 @@ static void _list_delete_path_t(void *x)
 	xfree(path);
 }
 
-static entry_t *_parse_openapi_path(const char *str_path, int *count_ptr)
+static int _on_parse_url_entry(const char *token, bool template, void *arg)
 {
-	char *save_ptr = NULL;
-	char *buffer = xstrdup(str_path);
-	char *token = strtok_r(buffer, "/", &save_ptr);
-	entry_t *entries = NULL;
-	entry_t *entry = NULL;
-	int count = 0;
+	url_parse_args_t *args = arg;
+	entry_t *entry = args->entry;
 
-	/* find max bound on number of entries */
-	for (const char *i = str_path; *i; i++)
-		if (*i == '/')
-			count++;
+	xassert(args->magic == URL_PARSE_ARGS_MAGIC);
 
-	if (count > 1024)
-		fatal_abort("%s: url %s is way too long", str_path, __func__);
-
-	entry = entries = xcalloc((count + 1), sizeof(entry_t));
-
-	while (token) {
-		const size_t slen = strlen(token);
-
-		/* ignore // entries */
-		if (slen <= 0)
-			goto again;
-
-		entry->entry = xstrdup(token);
-
-		if (!xstrcmp(token, ".") || !xstrcmp(token, "..")) {
-			/*
-			 * there should not be a .. or . in a path
-			 * definition, it just doesn't make any sense
-			 */
-			error("%s: invalid %s at entry",
-			      __func__, token);
-			goto fail;
-		} else if (slen > 3 && token[0] == '{' &&
-			   token[slen - 1] == '}') {
-			entry->type = OPENAPI_PATH_ENTRY_MATCH_PARAMETER;
-			entry->name = xstrndup(token + 1, slen - 2);
-
-			debug5("%s: parameter %s at entry %s",
-			       __func__, entry->name, token);
-		} else { /* not a variable */
-			entry->type = OPENAPI_PATH_ENTRY_MATCH_STRING;
-			entry->name = NULL;
-
-			debug5("%s: string match entry %s",
-			       __func__, token);
-		}
-
-		entry++;
-		xassert(entry <= entries + count);
-again:
-		token = strtok_r(NULL, "/", &save_ptr);
+	if (!args->entry) {
+		args->count++;
+		return SLURM_SUCCESS;
 	}
 
-	/* last is always NULL */
-	xassert(!entry->type);
-	xfree(buffer);
-	if (count_ptr)
-		*count_ptr = count;
-	return entries;
+	entry->entry = xstrdup(token);
 
-fail:
-	_free_entry_list(entries, -1, NULL);
-	xfree(buffer);
+	if (!xstrcmp(token, ".") || !xstrcmp(token, "..")) {
+		/*
+		 * there should not be a .. or . in a path
+		 * definition, it just doesn't make any sense
+		 */
+		error("%s: invalid %s at entry", __func__, token);
+		return ESLURM_URL_INVALID_PATH;
+	}
+
+	if (template) {
+		entry->type = OPENAPI_PATH_ENTRY_MATCH_PARAMETER;
+		entry->name = xstrdup(token);
+
+		debug5("%s: parameter %s at entry %s",
+		       __func__, entry->name, token);
+	} else { /* not a variable */
+		entry->type = OPENAPI_PATH_ENTRY_MATCH_STRING;
+		entry->name = NULL;
+
+		debug5("%s: string match entry %s",
+		       __func__, token);
+	}
+
+	args->entry++;
+	return SLURM_SUCCESS;
+}
+
+static entry_t *_parse_openapi_path(const char *str_path, int *count_ptr)
+{
+	url_parse_args_t args = {
+		.magic = URL_PARSE_ARGS_MAGIC,
+	};
+	entry_t *entries = NULL;
+
+	if (url_path_walk(str_path, true, _on_parse_url_entry, &args))
+		fatal_abort("Unable to parse path format: %s", str_path);
+
+	xassert(args.count > 0);
+	xassert(args.count < MAX_URL_PATH_DEPTH);
+
+	args.entry = entries = xcalloc((args.count + 1), sizeof(*entries));
+
+	if (url_path_walk(str_path, true, _on_parse_url_entry, &args))
+		fatal_abort("Unable to parse path: %s", str_path);
+
+	xassert(args.entry <= (entries + args.count));
+
 	if (count_ptr)
-		*count_ptr = -1;
-	return NULL;
+		*count_ptr = args.count;
+
+	return entries;
 }
 
 static int _print_path_tag_methods(void *x, void *arg)
