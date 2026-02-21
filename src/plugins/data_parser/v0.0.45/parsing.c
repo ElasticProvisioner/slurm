@@ -635,6 +635,19 @@ static void _parser_linked_flag(args_t *args, const parser_t *const array,
 	FREE_NULL_DATA(ppath);
 }
 
+static bool _match_array_path(const parser_t *const parser, data_t *path)
+{
+	bool match;
+	data_t *fpath = data_new();
+
+	(void) data_list_split_str(fpath, parser->key, "/");
+
+	match = data_check_match(fpath, path, false);
+
+	FREE_NULL_DATA(fpath);
+	return match;
+}
+
 static data_for_each_cmd_t _foreach_parse_marray(const char *key, data_t *data,
 						 void *arg)
 {
@@ -658,7 +671,6 @@ static data_for_each_cmd_t _foreach_parse_marray(const char *key, data_t *data,
 	for (int i = 0; i < array->field_count; i++) {
 		bool match;
 		const parser_t *const parser = &array->fields[i];
-		data_t *fpath;
 
 		if (parser->model == PARSER_MODEL_ARRAY_SKIP_FIELD)
 			continue;
@@ -689,12 +701,7 @@ static data_for_each_cmd_t _foreach_parse_marray(const char *key, data_t *data,
 			}
 		}
 
-		fpath = data_new();
-		(void) data_list_split_str(fpath, parser->key, "/");
-		match = data_check_match(fpath, cargs.path, false);
-		FREE_NULL_DATA(fpath);
-
-		if (match) {
+		if ((match = _match_array_path(parser, cargs.path))) {
 			if (slurm_conf.debug_flags & DEBUG_FLAG_DATA) {
 				char *p = NULL;
 				data_list_join_str(&p, cargs.path, "/");
