@@ -1387,12 +1387,12 @@ extern const char *conmgr_con_get_name(conmgr_fd_ref_t *ref)
 /* Caller must hold mgr.mutex lock */
 static int _con_get_status(conmgr_fd_t *con, conmgr_fd_status_t *status_ptr)
 {
+	if (!con)
+		return EINVAL;
+
 	xassert(con->magic == MAGIC_CON_MGR_FD);
 	xassert(con_flag(con, FLAG_WORK_ACTIVE));
 	xassert(status_ptr);
-
-	if (!con)
-		return EINVAL;
 
 	*status_ptr = (conmgr_fd_status_t) {
 		.is_socket = con_flag(con, FLAG_IS_SOCKET),
