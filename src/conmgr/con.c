@@ -1464,6 +1464,9 @@ extern int conmgr_con_fstat_input(conmgr_fd_ref_t *ref, struct stat *stat_ptr)
 
 	slurm_mutex_unlock(&mgr.mutex);
 
+	if (input_fd < 0)
+		return EBADF;
+
 	/*
 	 * Possible but unlikely TOCTOU if input_fd is reused after unlocking
 	 * and before fstat(). Intentionally not locking the syscall as it
