@@ -893,10 +893,12 @@ extern void threadpool_init(const int default_count, const char *params)
 
 	_parse_params(default_count, params);
 
-	if (threadpool.enabled || threadpool.shutdown)
-		return;
-
 	slurm_mutex_lock(&threadpool.mutex);
+
+	if (threadpool.enabled || threadpool.shutdown) {
+		slurm_mutex_unlock(&threadpool.mutex);
+		return;
+	}
 
 	xassert(!threadpool.shutdown);
 
