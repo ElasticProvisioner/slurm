@@ -387,7 +387,10 @@ static int _call_handler(on_http_request_args_t *args, data_t *params,
 
 		send_args.con = conmgr_fd_get_ref(args->con);
 
-		if (body) {
+		if (rc == ESLURM_REST_EMPTY_RESULT) {
+			send_args.status_code =
+				HTTP_STATUS_CODE_SUCCESS_NO_CONTENT;
+		} else if (body) {
 			send_args.body = body;
 			send_args.body_length = strlen(body);
 			send_args.body_encoding = write_mime;
