@@ -2904,7 +2904,7 @@ void init_slurm_conf(slurm_conf_t *ctl_conf_ptr)
 	xfree(ctl_conf_ptr->suspend_exc_states);
 	xfree(ctl_conf_ptr->suspend_program);
 	ctl_conf_ptr->suspend_rate = NO_VAL16;
-	ctl_conf_ptr->suspend_time = NO_VAL16;
+	ctl_conf_ptr->suspend_time = NO_VAL;
 	ctl_conf_ptr->suspend_timeout = 0;
 	xfree(ctl_conf_ptr->switch_type);
 	xfree(ctl_conf_ptr->switch_param);
