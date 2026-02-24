@@ -1292,6 +1292,9 @@ extern void power_save_set_timeouts(bool *partition_suspend_time_set)
 			((node_ptr->resume_timeout == NO_VAL16) ?
 				slurm_conf.resume_timeout :
 				node_ptr->resume_timeout);
+		debug5("Power save settings for '%s': SuspendTime=%u,SuspendTimeout=%u,ResumeTimeout=%u",
+		       node_ptr->name, node_ptr->suspend_time,
+		       node_ptr->suspend_timeout, node_ptr->resume_timeout);
 	}
 }
 
