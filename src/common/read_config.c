@@ -501,6 +501,24 @@ static int _defunct_option(void **dest, slurm_parser_enum_t type,
 	return 0;
 }
 
+static int _parse_suspend_time(char *str, uint32_t *suspend_time)
+{
+	uint64_t tmp_64;
+
+	if (!xstrcasecmp(str, "NONE") || !xstrcasecmp(str, "INFINITE") ||
+	    !xstrcasecmp(str, "-1")) {
+		*suspend_time = INFINITE;
+	} else {
+		tmp_64 = slurm_atoul(str);
+		if (tmp_64 > UINT32_MAX) {
+			return SLURM_ERROR;
+		}
+		*suspend_time = (uint32_t) tmp_64;
+	}
+
+	return SLURM_SUCCESS;
+}
+
 static int _parse_nodename(void **dest, slurm_parser_enum_t type,
 			   const char *key, const char *value,
 			   const char *line, char **leftover)
@@ -1498,17 +1516,9 @@ static int _parse_partitionname(void **dest, slurm_parser_enum_t type,
 		}
 
 		if (s_p_get_string(&tmp, "SuspendTime", tbl)) {
-			if (!xstrcasecmp(tmp, "INFINITE") ||
-			    !xstrcasecmp(tmp, "-1")) {
-				p->suspend_time = INFINITE;
-			} else {
-				tmp_64 = slurm_atoul(tmp);
-				if (tmp_64 > UINT32_MAX) {
-					error("Bad value \"%s\" for SuspendTime",
-					      tmp);
-					goto fail;
-				}
-				p->suspend_time = (uint32_t) tmp_64;
+			if (_parse_suspend_time(tmp, &p->suspend_time)) {
+				error("Bad value \"%s\" for SuspendTime", tmp);
+				goto fail;
 			}
 			xfree(tmp);
 		}
@@ -5027,19 +5037,10 @@ static int _validate_and_set_defaults(slurm_conf_t *conf,
 	if (!s_p_get_uint16(&conf->suspend_rate, "SuspendRate", hashtbl))
 		conf->suspend_rate = DEFAULT_SUSPEND_RATE;
 	if (s_p_get_string(&temp_str, "SuspendTime", hashtbl)) {
-		if (!xstrcasecmp(temp_str, "NONE") ||
-		    !xstrcasecmp(temp_str, "INFINITE") ||
-		    !xstrcasecmp(temp_str, "-1")) {
-			conf->suspend_time = INFINITE;
-		} else {
-			uint64_tmp = slurm_atoul(temp_str);
-			if (uint64_tmp > UINT32_MAX) {
-				error("Bad value \"%s\" for SuspendTime",
-				      temp_str);
-				xfree(temp_str);
-				return SLURM_ERROR;
-			}
-			conf->suspend_time = (uint32_t) uint64_tmp;
+		if (_parse_suspend_time(temp_str, &conf->suspend_time)) {
+			error("Bad value \"%s\" for SuspendTime", temp_str);
+			xfree(temp_str);
+			return SLURM_ERROR;
 		}
 		xfree(temp_str);
 	} else {
