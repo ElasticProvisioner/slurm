@@ -41,6 +41,10 @@ import pytest
 # Setup
 @pytest.fixture(scope="module", autouse=True)
 def setup():
+    atf.require_version(
+        (25, 11),
+        reason="The --requeue=expedite option was added in 25.11",
+    )
     atf.require_auto_config("wants to set and unset Epilog")
     atf.require_config_parameter_includes(
         "SlurmctldParameters", "enable_expedited_requeue"
@@ -70,6 +74,10 @@ def resume_node(setup, cancel_jobs, node):
     atf.wait_for_node_state(node, "IDLE", fatal=True)
 
 
+@pytest.mark.xfail(
+    atf.get_version() < (25, 11, 3),
+    reason="Ticket 24564: Expedite requeue was transitioning jobs to REQUEUE_HOLD on success",
+)
 def test_expedited_requeue_success():
     """Test that --requeue=expedite does NOT requeue on successful completion."""
 
@@ -147,6 +155,10 @@ exit 1
     atf.run_command(f"rm -f {epilog}", fatal=True)
 
 
+@pytest.mark.xfail(
+    atf.get_version() < (25, 11, 3),
+    reason="Ticket 24564: Expedite requeue was transitioning jobs to REQUEUE_HOLD on success",
+)
 def test_expedited_requeue_epilog_failure(epilog_failure, node):
     """When epilog fails with job exit 0, node is drained; job completes (no requeue criteria, so no requeue)."""
 
