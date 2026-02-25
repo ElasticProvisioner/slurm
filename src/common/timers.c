@@ -38,11 +38,14 @@
 
 #include <stdio.h>
 #include <sys/time.h>
+
 #include "src/common/log.h"
+#include "src/common/probes.h"
 #include "src/common/slurm_protocol_defs.h"
 #include "src/common/slurm_time.h"
 #include "src/common/timers.h"
 #include "src/common/xassert.h"
+#include "src/common/xstring.h"
 
 #define TIMER_DEFAULT_LIMIT \
 	((timespec_t) { \
@@ -53,6 +56,7 @@
 		.tv_sec = 1, \
 	})
 #define HISTOGRAM_FIELD_DELIMITER "|"
+#define MAX_TIMER_NAME_BYTES 256
 
 typedef struct {
 	const char *label;
@@ -141,13 +145,17 @@ static hourminsec_str_t _timespec_to_hourminsec(const timespec_t ts)
 }
 
 extern void timer_compare_limit(const timespec_t tv1, const timespec_t tv2,
-				const char *from, timespec_t limit)
+				const char *from, timespec_t limit,
+				latency_histogram_t *histogram)
 {
 	bool is_after_limit = false;
 	timespec_t debug_limit = limit;
 	const timespec_t diff = timespec_diff_ns(tv2, tv1).diff;
 
 	xassert(from);
+
+	if (histogram)
+		latency_metric_add_histogram_value(histogram, diff);
 
 	if (!limit.tv_nsec && !limit.tv_sec) {
 		/*
@@ -169,10 +177,24 @@ extern void timer_compare_limit(const timespec_t tv1, const timespec_t tv2,
 			_timespec_to_hourminsec(tv1).str,
 			(int) (tv1.tv_nsec / NSEC_IN_MSEC));
 	} else { /* Log anything over 1 second here */
-		debug("Note large processing time from %s: %s began=%s.%3.3d",
+		char str_labels[LATENCY_METRIC_HISTOGRAM_STR_LEN] = { 0 };
+		char str_buckets[LATENCY_METRIC_HISTOGRAM_STR_LEN] = { 0 };
+
+		if (histogram) {
+			(void) latency_histogram_print_labels(
+				str_labels, sizeof(str_labels));
+			(void) latency_histogram_print(histogram, str_buckets,
+						       sizeof(str_buckets));
+		}
+
+		debug("Note large processing time from %s: %s began=%s.%3.3d%s%s%s%s",
 		      from, timer_duration_str(tv1, tv2).str,
 		      _timespec_to_hourminsec(tv1).str,
-		      (int) (tv1.tv_nsec / NSEC_IN_MSEC));
+		      (int) (tv1.tv_nsec / NSEC_IN_MSEC),
+		      (histogram ? "\nHistogram: " : ""),
+		      (histogram ? str_labels : ""),
+		      (histogram ? "\nHistogram: " : ""),
+		      (histogram ? str_buckets : ""));
 	}
 }
 
@@ -264,6 +286,8 @@ extern int latency_histogram_print_labels(char *buffer, size_t buffer_len)
 extern void latency_metric_add_histogram_value(latency_histogram_t *histogram,
 					       timespec_t value)
 {
+	xassert(histogram->magic == LATENCY_HISTOGRAM_MAGIC);
+
 	for (int i = 0; (i < ARRAY_SIZE(latency_ranges)); i++) {
 		const latency_range_t *range = &latency_ranges[i];
 
@@ -283,6 +307,8 @@ extern int latency_histogram_print(latency_histogram_t *histogram, char *buffer,
 {
 	int wrote = 0;
 
+	xassert(histogram->magic == LATENCY_HISTOGRAM_MAGIC);
+
 	/* sanity check the buckets sizes are still same sizes */
 	xassert(ARRAY_SIZE(latency_ranges) == ARRAY_SIZE(histogram->buckets));
 	xassert(ARRAY_SIZE(latency_ranges) == LATENCY_RANGE_COUNT);
@@ -296,6 +322,32 @@ extern int latency_histogram_print(latency_histogram_t *histogram, char *buffer,
 				  atomic_uint64_get(histogram->buckets[i]));
 
 	return wrote;
+}
+
+static probe_status_t _probe(probe_log_t *log, void *arg)
+{
+	char str[LATENCY_METRIC_HISTOGRAM_STR_LEN] = { 0 };
+	latency_histogram_t *histogram = arg;
+
+	xassert(histogram->magic == LATENCY_HISTOGRAM_MAGIC);
+
+	(void) latency_histogram_print_labels(str, sizeof(str));
+	probe_log(log, "histogram: %s", str);
+
+	(void) latency_histogram_print(histogram, str, sizeof(str));
+	probe_log(log, "histogram: %s", str);
+
+	return PROBE_RC_READY;
+}
+
+extern void timer_register_probe(latency_histogram_t *histogram,
+				 const char *caller)
+{
+	char name[MAX_TIMER_NAME_BYTES] = { 0 };
+
+	(void) snprintf(name, sizeof(name), "timer@%s()", caller);
+
+	probe_register(name, _probe, histogram);
 }
 
 #else /* __STDC_NO_ATOMICS__ */

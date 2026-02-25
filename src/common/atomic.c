@@ -101,4 +101,11 @@ extern uint64_t atomic_uint64_ptr_set(atomic_uint64_t *target, uint64_t value)
 	return atomic_exchange(&target->value, value);
 }
 
+extern bool atomic_run_once_ptr(atomic_run_once_t *target)
+{
+	bool expected = false;
+
+	return atomic_compare_exchange_strong(&target->value, &expected, true);
+}
+
 #endif /* __STDC_NO_ATOMICS__ */

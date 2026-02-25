@@ -176,7 +176,7 @@ static void _probe_verbose(probe_log_t *log)
 	probe_log(log, "StateSave Histogram: %s", histogram);
 }
 
-static probe_status_t _probe(probe_log_t *log)
+static probe_status_t _probe(probe_log_t *log, void *arg)
 {
 	probe_status_t status = PROBE_RC_UNKNOWN;
 
@@ -207,7 +207,7 @@ extern void *slurmctld_state_save(void *no_data)
 	bool run_save;
 	int save_count;
 
-	probe_register(__func__, _probe);
+	probe_register(__func__, _probe, NULL);
 
 	while (1) {
 		/* wait for work to perform */

@@ -2495,7 +2495,7 @@ static void _probe_verbose(probe_log_t *log)
 	(void) list_for_each_ro(mgr.connections, _foreach_log_connection, log);
 }
 
-extern probe_status_t probe_connections(probe_log_t *log)
+extern probe_status_t probe_connections(probe_log_t *log, void *arg)
 {
 	probe_status_t status = PROBE_RC_UNKNOWN;
 

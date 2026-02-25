@@ -665,7 +665,7 @@ extern void queue_on_connection(conmgr_fd_t *con);
  * Probe all connections to info()
  * NOTE: caller must not hold conmgr global lock
  */
-extern probe_status_t probe_connections(probe_log_t *log);
+extern probe_status_t probe_connections(probe_log_t *log, void *arg);
 
 /* Min buffer size to call printf_work() */
 #define PRINTF_WORK_CHARS 512
@@ -686,6 +686,6 @@ extern size_t printf_work(const work_t *work, char *buffer, size_t len,
  * Probe all work
  * NOTE: caller must not hold conmgr global lock
  */
-extern probe_status_t probe_work(probe_log_t *log);
+extern probe_status_t probe_work(probe_log_t *log, void *arg);
 
 #endif /* _CONMGR_MGR_H */

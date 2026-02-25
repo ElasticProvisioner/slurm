@@ -139,7 +139,7 @@ static void _probe_verbose(probe_log_t *log)
 	     quiesce_start, BOOL_CHARIFY(mgr.quiesce.active));
 }
 
-static probe_status_t _probe(probe_log_t *log)
+static probe_status_t _probe(probe_log_t *log, void *arg)
 {
 	probe_status_t status = PROBE_RC_UNKNOWN;
 
@@ -237,9 +237,9 @@ extern void conmgr_init(int thread_count, int default_thread_count,
 
 	atomic_log_features();
 
-	probe_register("conmgr", _probe);
-	probe_register("conmgr->connections", probe_connections);
-	probe_register("conmgr->work", probe_work);
+	probe_register("conmgr", _probe, NULL);
+	probe_register("conmgr->connections", probe_connections, NULL);
+	probe_register("conmgr->work", probe_work, NULL);
 }
 
 extern void conmgr_fini(void)

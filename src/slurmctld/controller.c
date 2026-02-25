@@ -311,9 +311,9 @@ static void _update_pidfile(void);
 static void         _update_qos(slurmdb_qos_rec_t *rec);
 static void _usage(void);
 static void _verify_clustername(void);
-static probe_status_t _probe_listeners(probe_log_t *log);
-static probe_status_t _probe_primary(probe_log_t *log);
-static probe_status_t _probe_reconfig(probe_log_t *log);
+static probe_status_t _probe_listeners(probe_log_t *log, void *arg);
+static probe_status_t _probe_primary(probe_log_t *log, void *arg);
+static probe_status_t _probe_reconfig(probe_log_t *log, void *arg);
 
 static void _send_reconfig_replies(void)
 {
@@ -638,9 +638,9 @@ int main(int argc, char **argv)
 	stepmgr_ops_t stepmgr_ops = { 0 };
 
 	probe_init();
-	probe_register("rpc-listeners", _probe_listeners);
-	probe_register("primary", _probe_primary);
-	probe_register("reconfiguring", _probe_reconfig);
+	probe_register("rpc-listeners", _probe_listeners, NULL);
+	probe_register("primary", _probe_primary, NULL);
+	probe_register("reconfiguring", _probe_reconfig, NULL);
 
 	stepmgr_ops.agent_queue_request = agent_queue_request;
 	stepmgr_ops.find_job = find_job;
@@ -1548,7 +1548,7 @@ rwfail:
 	(void) close(fd);
 }
 
-static probe_status_t _probe_reconfig(probe_log_t *log)
+static probe_status_t _probe_reconfig(probe_log_t *log, void *arg)
 {
 	probe_status_t status = PROBE_RC_UNKNOWN;
 
@@ -1836,7 +1836,7 @@ extern void listeners_unquiesce(void)
 	slurm_mutex_unlock(&listeners.mutex);
 }
 
-static probe_status_t _probe_listeners(probe_log_t *log)
+static probe_status_t _probe_listeners(probe_log_t *log, void *arg)
 {
 	probe_status_t status = PROBE_RC_UNKNOWN;
 
@@ -1854,7 +1854,7 @@ static probe_status_t _probe_listeners(probe_log_t *log)
 	return status;
 }
 
-static probe_status_t _probe_primary(probe_log_t *log)
+static probe_status_t _probe_primary(probe_log_t *log, void *arg)
 {
 	probe_status_t status = PROBE_RC_UNKNOWN;
 
