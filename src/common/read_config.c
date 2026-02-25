@@ -1346,10 +1346,7 @@ static int _parse_partitionname(void **dest, slurm_parser_enum_t type,
 			int max_time = time_str2mins(tmp);
 			if ((max_time < 0) && (max_time != INFINITE)) {
 				error("Bad value \"%s\" for MaxTime", tmp);
-				_destroy_partitionname(p);
-				s_p_hashtbl_destroy(tbl);
-				xfree(tmp);
-				return -1;
+				goto fail;
 			}
 			p->max_time = max_time;
 			xfree(tmp);
@@ -1363,10 +1360,7 @@ static int _parse_partitionname(void **dest, slurm_parser_enum_t type,
 			int default_time = time_str2mins(tmp);
 			if ((default_time < 0) && (default_time != INFINITE)) {
 				error("Bad value \"%s\" for DefaultTime", tmp);
-				_destroy_partitionname(p);
-				s_p_hashtbl_destroy(tbl);
-				xfree(tmp);
-				return -1;
+				goto fail;
 			}
 			p->default_time = default_time;
 			xfree(tmp);
@@ -1463,10 +1457,7 @@ static int _parse_partitionname(void **dest, slurm_parser_enum_t type,
 			else {
 				error("Bad value for SelectTypeParameters: %s",
 				      tmp);
-				_destroy_partitionname(p);
-				s_p_hashtbl_destroy(tbl);
-				xfree(tmp);
-				return -1;
+				goto fail;
 			}
 			xfree(tmp);
 		}
@@ -1502,10 +1493,7 @@ static int _parse_partitionname(void **dest, slurm_parser_enum_t type,
 			else {
 				error("Bad value \"%s\" for OverSubscribe",
 				      tmp);
-				_destroy_partitionname(p);
-				s_p_hashtbl_destroy(tbl);
-				xfree(tmp);
-				return -1;
+				goto fail;
 			}
 			xfree(tmp);
 		}
@@ -1543,10 +1531,7 @@ static int _parse_partitionname(void **dest, slurm_parser_enum_t type,
 				 p->state_up = PARTITION_INACTIVE;
 			else {
 				error("Bad value \"%s\" for State", tmp);
-				_destroy_partitionname(p);
-				s_p_hashtbl_destroy(tbl);
-				xfree(tmp);
-				return -1;
+				goto fail;
 			}
 			xfree(tmp);
 		}
@@ -1559,6 +1544,11 @@ static int _parse_partitionname(void **dest, slurm_parser_enum_t type,
 		*dest = (void *)p;
 
 		return 1;
+fail:
+		_destroy_partitionname(p);
+		s_p_hashtbl_destroy(tbl);
+		xfree(tmp);
+		return -1;
 	}
 
 	/* should not get here */
