@@ -1419,8 +1419,7 @@ static int _parse_partitionname(void **dest, slurm_parser_enum_t type,
 			}
 			if (p->preempt_mode == NO_VAL16) {
 				error("Bad value \"%s\" for PreemptMode", tmp);
-				xfree(tmp);
-				return -1;
+				goto fail;
 			}
 			xfree(tmp);
 		}
@@ -1507,8 +1506,7 @@ static int _parse_partitionname(void **dest, slurm_parser_enum_t type,
 				if (tmp_64 > UINT32_MAX) {
 					error("Bad value \"%s\" for SuspendTime",
 					      tmp);
-					xfree(tmp);
-					return -1;
+					goto fail;
 				}
 				p->suspend_time = (uint32_t) tmp_64;
 			}
