@@ -193,11 +193,13 @@ def test_expedited_requeue_job_and_epilog_failure(epilog_failure, node):
         job_id, "EXPEDITING"
     ), "Job should not be REQUEUE_HOLD when epilog failed (expedited requeue expected)"
 
-    # Verify the node is unavailable (epilog failure drains the node)
-    reason = (atf.get_job_parameter(job_id, "Reason") or "").upper()
-    assert (
-        "DRAINED" in reason
-    ), f"Job reason should indicate node is drained, got {reason}"
+    # Verify the node is unavailable (epilog failure drains the node).
+    # Assert on node state rather than job Reason: Reason only shows "DRAINED"
+    # after the scheduler runs; with SchedulerParameters=defer_batch or
+    # SlurmctldParameters=enable_rpc_queue the scheduler may not have run yet.
+    assert atf.wait_for_node_state(
+        node, "DRAIN"
+    ), f"Node {node} should be drained when epilog failed"
 
     # Verify ExpeditedRequeue flag is set
     expedited_requeue = atf.get_job_parameter(job_id, "ExpeditedRequeue")
