@@ -3288,8 +3288,6 @@ typedef struct slurm_update_node_msg {
 	char *node_names;	/* nodelist expression */
 	uint32_t node_state;	/* see enum node_states */
 	char *reason;		/* reason for node being DOWN or DRAINING */
-	uint32_t reason_uid;	/* user ID of sending (needed if user
-				 * root is sending message) */
 	uint32_t resume_after;	/* automatically resume DOWN or DRAINED node
 				 * after this amount of seconds */
 	char *topology_str; /* new topology address string */
