@@ -177,7 +177,7 @@ extern int bind_operation_path(const openapi_path_binding_t *op_path,
 	int rc = SLURM_SUCCESS;
 	data_t *resp;
 
-	if (!(op_path->flags & OP_BIND_DATA_PARSER)) {
+	if (!(op_path->flags & OPENAPI_BIND_DATA_PARSER)) {
 		data_parser_t *default_parser = NULL;
 
 		if (!parsers[0])
@@ -331,7 +331,7 @@ static int _call_handler(on_http_request_args_t *args, data_t *params,
 
 	auth = http_context_set_auth(args->context, NULL);
 
-	if (!(op_path->flags & OP_BIND_NO_SLURMDBD) &&
+	if (!(op_path->flags & OPENAPI_BIND_NO_SLURMDBD) &&
 	    slurm_conf.accounting_storage_type)
 		db_conn = openapi_get_db_conn(auth);
 

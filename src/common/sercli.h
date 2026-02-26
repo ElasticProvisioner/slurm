@@ -36,6 +36,8 @@
 #ifndef _COMMON_SERCLI_H
 #define _COMMON_SERCLI_H
 
+#include "src/common/openapi.h"
+
 #include "src/interfaces/data_parser.h"
 
 /*

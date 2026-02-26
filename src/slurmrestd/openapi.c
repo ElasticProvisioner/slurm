@@ -285,7 +285,7 @@ static const openapi_path_binding_method_t health_methods[] = {
 static int _op_handler_openapi(openapi_ctxt_t *ctxt);
 static int _op_handler_health(openapi_ctxt_t *ctxt);
 
-#define OP_FLAGS (OP_BIND_HIDDEN_OAS | OP_BIND_NO_SLURMDBD)
+#define OP_FLAGS (OPENAPI_BIND_HIDDEN_OAS | OPENAPI_BIND_NO_SLURMDBD)
 
 /*
  * Paths to generate OpenAPI specification
@@ -553,9 +553,9 @@ static void _check_openapi_path_binding(const openapi_path_binding_t *op_path)
 #ifndef NDEBUG
 	xassert(op_path->path);
 	xassert(op_path->callback);
-	xassert((op_path->flags == OP_BIND_NONE) ||
-		((op_path->flags > OP_BIND_NONE) &&
-		 (op_path->flags < OP_BIND_INVALID_MAX)));
+	xassert((op_path->flags == OPENAPI_BIND_NONE) ||
+		((op_path->flags > OPENAPI_BIND_NONE) &&
+		 (op_path->flags < OPENAPI_BIND_INVALID_MAX)));
 
 	for (int i = 0;; i++) {
 		const openapi_path_binding_method_t *method =
@@ -632,7 +632,7 @@ extern int register_path_binding(const char *in_path,
 	       __func__, (parser ? data_parser_get_plugin_version(parser) :
 			  "data_parser/none"), path);
 
-	xassert(!!in_path == !!(op_path->flags & OP_BIND_DATA_PARSER));
+	xassert(!!in_path == !!(op_path->flags & OPENAPI_BIND_DATA_PARSER));
 	_check_openapi_path_binding(op_path);
 
 	if (!(entries = _parse_openapi_path(path, &entries_count)))
@@ -1283,7 +1283,7 @@ static int _foreach_add_path(void *x, void *arg)
 	if (!bound)
 		return SLURM_SUCCESS;
 
-	if (bound->flags & OP_BIND_HIDDEN_OAS)
+	if (bound->flags & OPENAPI_BIND_HIDDEN_OAS)
 		return SLURM_SUCCESS;
 
 	xassert(!data_key_get(spec->paths, path->path));
@@ -1720,10 +1720,10 @@ extern int wrap_openapi_ctxt_callback(const char *context_id,
 	      __func__, context_id, get_http_method_string(method),
 	      data_parser_get_plugin(ctxt.parser));
 
-	if (op_path->flags & OP_BIND_NO_SLURMDBD) {
+	if (op_path->flags & OPENAPI_BIND_NO_SLURMDBD) {
 		; /* Do not attempt to open a connection to slurmdbd */
 	} else if (!(ctxt.db_conn = db_conn)) {
-		if (op_path->flags & OP_BIND_REQUIRE_SLURMDBD)
+		if (op_path->flags & OPENAPI_BIND_REQUIRE_SLURMDBD)
 			openapi_resp_error(
 				&ctxt, (rc = ESLURM_DB_CONNECTION),
 				XSTRINGIFY(openapi_get_db_conn),
@@ -1745,7 +1745,7 @@ extern int wrap_openapi_ctxt_callback(const char *context_id,
 	if (data_get_type(ctxt.resp) == DATA_TYPE_NULL)
 		data_set_dict(ctxt.resp);
 
-	if (op_path->flags & OP_BIND_OPENAPI_RESP_FMT)
+	if (op_path->flags & OPENAPI_BIND_OPENAPI_RESP_FMT)
 		_populate_openapi_results(&ctxt, &query_meta);
 
 	if (!rc)
