@@ -877,6 +877,7 @@ CXXDEPMODE
 ac_ct_CXX
 CXXFLAGS
 CXX
+LD_EMULATION
 WITH_MYSQL_FALSE
 WITH_MYSQL_TRUE
 MYSQL_CFLAGS
@@ -6233,6 +6234,22 @@ printf "%s\n" "#define USE_ALIAS 0" >>confdefs.h
 printf "%s\n" "#define USE_ALIAS 1" >>confdefs.h
  ;;
 esac
+
+LD_EMULATION=""
+case "$host" in
+	x86_64-*-freebsd*)      LD_EMULATION="-m elf_amd64"    ;;
+	amd64-*-freebsd*)       LD_EMULATION="-m elf_amd64"    ;;
+	aarch64-*-freebsd*)     LD_EMULATION="-m aarch64elf"   ;;
+	powerpc64le-*-freebsd*) LD_EMULATION="-m elf64lppc"    ;;
+	powerpc64-*-freebsd*)   LD_EMULATION="-m elf64ppc"     ;;
+	riscv64-*-freebsd*)     LD_EMULATION="-m elf64lriscv"  ;;
+	*)                      LD_EMULATION=""                ;;
+esac
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ld emulation flag" >&5
+printf %s "checking ld emulation flag... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LD_EMULATION" >&5
+printf "%s\n" "$LD_EMULATION" >&6; }
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
