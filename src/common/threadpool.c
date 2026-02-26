@@ -893,10 +893,12 @@ extern void threadpool_init(const int default_count, const char *params)
 
 	_parse_params(default_count, params);
 
-	if (threadpool.enabled || threadpool.shutdown)
-		return;
-
 	slurm_mutex_lock(&threadpool.mutex);
+
+	if (threadpool.enabled || threadpool.shutdown) {
+		slurm_mutex_unlock(&threadpool.mutex);
+		return;
+	}
 
 	xassert(!threadpool.shutdown);
 
@@ -925,14 +927,17 @@ extern void threadpool_init(const int default_count, const char *params)
 
 extern void threadpool_fini(void)
 {
-	if (!threadpool.enabled)
+	slurm_mutex_lock(&threadpool.mutex);
+
+	if (!threadpool.enabled) {
+		slurm_mutex_unlock(&threadpool.mutex);
 		return;
+	}
 
 	/*
 	 * Never change threadpool.enabled to false to avoid race conditions of
 	 * checking if threadpool was ever enabled
 	 */
-	slurm_mutex_lock(&threadpool.mutex);
 
 	threadpool.shutdown = true;
 

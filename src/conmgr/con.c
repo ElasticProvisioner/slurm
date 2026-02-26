@@ -1387,12 +1387,12 @@ extern const char *conmgr_con_get_name(conmgr_fd_ref_t *ref)
 /* Caller must hold mgr.mutex lock */
 static int _con_get_status(conmgr_fd_t *con, conmgr_fd_status_t *status_ptr)
 {
+	if (!con)
+		return EINVAL;
+
 	xassert(con->magic == MAGIC_CON_MGR_FD);
 	xassert(con_flag(con, FLAG_WORK_ACTIVE));
 	xassert(status_ptr);
-
-	if (!con)
-		return EINVAL;
 
 	*status_ptr = (conmgr_fd_status_t) {
 		.is_socket = con_flag(con, FLAG_IS_SOCKET),
@@ -1463,6 +1463,9 @@ extern int conmgr_con_fstat_input(conmgr_fd_ref_t *ref, struct stat *stat_ptr)
 		input_fd = con->input_fd;
 
 	slurm_mutex_unlock(&mgr.mutex);
+
+	if (input_fd < 0)
+		return EBADF;
 
 	/*
 	 * Possible but unlikely TOCTOU if input_fd is reused after unlocking
