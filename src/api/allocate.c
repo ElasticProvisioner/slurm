@@ -1490,7 +1490,7 @@ static int _wait_for_alloc_rpc(const listen_t *listen, int sleep_time,
 		/* poll() was interrupted by interrupt_fd */
 		errno = EINTR;
 		return -1;
-	} else if (fds[0].revents & POLLIN) {
+	} else if (fds[0].revents & (POLLIN | POLLERR | POLLHUP)) {
 		return 1;
 	}
 
