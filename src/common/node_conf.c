@@ -295,6 +295,7 @@ extern config_record_t *config_record_from_conf_node(
 	config_ptr->nodes = xstrdup(conf_node->nodenames);
 	config_ptr->real_memory = conf_node->real_memory;
 	config_ptr->res_cores_per_gpu = conf_node->res_cores_per_gpu;
+	config_ptr->suspend_time = conf_node->suspend_time;
 	config_ptr->threads = conf_node->threads;
 	config_ptr->tmp_disk = conf_node->tmp_disk;
 	config_ptr->topology_str = xstrdup(conf_node->topology_str);
@@ -618,6 +619,7 @@ static void _init_config_record(config_record_t *config_ptr)
 	config_ptr->cores = 1;
 	config_ptr->cpus = 1;
 	config_ptr->real_memory = 1;
+	config_ptr->suspend_time = NO_VAL;
 	config_ptr->threads = 1;
 	config_ptr->tot_sockets = 1;
 	config_ptr->weight = 1;
@@ -699,7 +701,6 @@ static void _init_node_record(node_record_t *node_ptr,
 	node_ptr->port = slurm_conf.slurmd_port;
 	node_ptr->protocol_version = SLURM_MIN_PROTOCOL_VERSION;
 	node_ptr->resume_timeout = NO_VAL16;
-	node_ptr->suspend_time = NO_VAL;
 	node_ptr->suspend_timeout = NO_VAL16;
 
 	node_ptr->config_ptr = config_ptr;
@@ -710,6 +711,7 @@ static void _init_node_record(node_record_t *node_ptr,
 	node_ptr->mem_spec_limit = config_ptr->mem_spec_limit;
 	node_ptr->real_memory = config_ptr->real_memory;
 	node_ptr->res_cores_per_gpu = config_ptr->res_cores_per_gpu;
+	node_ptr->suspend_time = config_ptr->suspend_time;
 	node_ptr->threads = config_ptr->threads;
 	node_ptr->tmp_disk = config_ptr->tmp_disk;
 	node_ptr->tot_sockets = config_ptr->tot_sockets;
@@ -2115,6 +2117,7 @@ extern config_record_t *config_record_from_node_record(node_record_t *node_ptr)
 	config_ptr->nodes = xstrdup(node_ptr->name);
 	config_ptr->real_memory = node_ptr->real_memory;
 	config_ptr->res_cores_per_gpu = node_ptr->res_cores_per_gpu;
+	config_ptr->suspend_time = node_ptr->suspend_time;
 	config_ptr->threads = node_ptr->threads;
 	config_ptr->tmp_disk = node_ptr->tmp_disk;
 	config_ptr->topology_str = xstrdup(node_ptr->topology_str);
