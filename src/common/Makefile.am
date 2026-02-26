@@ -133,6 +133,8 @@ libcommon_la_SOURCES =				\
 	sack_api.h				\
 	sercli.c				\
 	sercli.h				\
+	serdes.c				\
+	serdes.h				\
 	setproctitle.c				\
 	setproctitle.h				\
 	sluid.c					\

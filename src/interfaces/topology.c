@@ -236,11 +236,12 @@ static int _parse_yaml(char *topo_conf)
 		goto done;
 	}
 
-	DATA_PARSE_FROM_STR(TOPOLOGY_CONF_ARRAY, conf_buf->head, conf_buf->size,
-			    tctx_array, NULL, MIME_TYPE_YAML, retval);
-	if (retval)
-		fatal("Something wrong with reading %s: %s", topo_conf,
-		      slurm_strerror(retval));
+	if ((retval = SERCLI_PARSE_STR(TOPOLOGY_CONF_ARRAY, NULL, tctx_array,
+				       get_buf_data(conf_buf),
+				       size_buf(conf_buf), MIME_TYPE_YAML)))
+		fatal("Something wrong with reading %s: %s",
+		      topo_conf, slurm_strerror(retval));
+
 	qsort(tctx_array.tctx, tctx_array.tctx_num, sizeof(topology_ctx_t),
 	      _cmp_tctx);
 	for (int i = 0; i < tctx_array.tctx_num; i++) {
@@ -256,10 +257,12 @@ static int _parse_yaml(char *topo_conf)
 
 	if (get_log_level() > LOG_LEVEL_DEBUG2) {
 		char *dump_str = NULL;
-		DATA_DUMP_TO_STR(TOPOLOGY_CONF_ARRAY, tctx_array, dump_str,
-				 NULL, MIME_TYPE_YAML, SER_FLAGS_NO_TAG,
-				 retval);
-		debug2("%s", dump_str);
+
+		if (!(SERCLI_DUMP_STR(TOPOLOGY_CONF_ARRAY, NULL, tctx_array,
+				      dump_str, MIME_TYPE_YAML,
+				      SER_FLAGS_NO_TAG)))
+			debug2("%s", dump_str);
+
 		xfree(dump_str);
 	}
 
@@ -402,18 +405,14 @@ extern int topology_g_destroy_config(void)
 
 extern char *topology_g_get_config(void)
 {
-	int retval = SLURM_SUCCESS;
 	char *dump_str = NULL;
 	topology_ctx_array_t tctx_array = {
 		.tctx = tctx,
 		.tctx_num = tctx_num,
 	};
 
-	DATA_DUMP_TO_STR(TOPOLOGY_CONF_ARRAY, tctx_array, dump_str, NULL,
-			 MIME_TYPE_YAML, SER_FLAGS_NO_TAG, retval);
-
-	if (retval)
-		xfree(dump_str);
+	(void) SERCLI_DUMP_STR(TOPOLOGY_CONF_ARRAY, NULL, tctx_array, dump_str,
+			       MIME_TYPE_YAML, SER_FLAGS_NO_TAG);
 
 	return dump_str;
 }

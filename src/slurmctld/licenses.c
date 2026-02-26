@@ -676,21 +676,28 @@ static void _parse_hierarchical_resources(list_t **license_list_ptr)
 			fatal("Hierarchical resources could not be loaded from %s",
 			      resources_conf);
 		}
-		DATA_PARSE_FROM_STR(H_RESOURCES_AS_LICENSE_LIST, conf_buf->head,
-				    conf_buf->size, *license_list_ptr, NULL,
-				    MIME_TYPE_YAML, rc);
-		if (rc)
+
+		if ((rc = SERCLI_PARSE_STR(H_RESOURCES_AS_LICENSE_LIST, NULL,
+					   *license_list_ptr,
+					   get_buf_data(conf_buf),
+					   size_buf(conf_buf), MIME_TYPE_YAML)))
 			fatal("Something wrong with reading %s: %s",
 			      resources_conf, slurm_strerror(rc));
 
 		if ((slurm_conf.debug_flags & DEBUG_FLAG_LICENSE)) {
 			char *dump_str = NULL;
-			DATA_DUMP_TO_STR(H_RESOURCES_AS_LICENSE_LIST,
-					 *license_list_ptr, dump_str, NULL,
-					 MIME_TYPE_YAML, SER_FLAGS_NO_TAG, rc);
-			if (rc)
-				error("Hierarchical resources dump failed");
-			verbose("Dump hierarchical resources:\n %s", dump_str);
+			int rc_dump = EINVAL;
+
+			if ((rc_dump = SERCLI_DUMP_STR(
+				     H_RESOURCES_AS_LICENSE_LIST, NULL,
+				     *license_list_ptr, dump_str,
+				     MIME_TYPE_YAML, SER_FLAGS_NO_TAG)))
+				log_flag(LICENSE, "%s: Hierarchical resources dump failed: %s",
+				      __func__, slurm_strerror(rc_dump));
+			else
+				log_flag(LICENSE, "%s: Dump hierarchical resources:\n %s",
+					 __func__, dump_str);
+
 			xfree(dump_str);
 		}
 		FREE_NULL_BUFFER(conf_buf);
@@ -1038,13 +1045,16 @@ extern int hres_init()
 	if ((slurm_conf.debug_flags & DEBUG_FLAG_LICENSE)) {
 		char *dump_str = NULL;
 		int rc = SLURM_SUCCESS;
-		DATA_DUMP_TO_STR(H_RESOURCES_AS_LICENSE_LIST,
-				 cluster_license_list, dump_str, NULL,
-				 MIME_TYPE_YAML, SER_FLAGS_NO_TAG, rc);
-		if (rc)
-			error("Hierarchical resources dump failed");
-		verbose("%s: Dump hierarchical resources:\n %s", __func__,
-			dump_str);
+
+		if ((rc = SERCLI_DUMP_STR(H_RESOURCES_AS_LICENSE_LIST, NULL,
+					  cluster_license_list, dump_str,
+					  MIME_TYPE_YAML, SER_FLAGS_NO_TAG)))
+			log_flag(LICENSE, "%s: Hierarchical resources dump failed: %s",
+			      __func__, slurm_strerror(rc));
+		else
+			log_flag(LICENSE, "%s: Dump hierarchical resources:\n %s",
+				 __func__, dump_str);
+
 		xfree(dump_str);
 	}
 	slurm_mutex_unlock(&license_mutex);
