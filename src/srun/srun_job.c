@@ -113,7 +113,6 @@ typedef struct het_job_resp_struct {
 	uint32_t node_cnt;
 } het_job_resp_struct_t;
 
-
 static int shepherd_fd = -1;
 static pthread_t signal_thread = (pthread_t) 0;
 static int pty_sigarray[] = { SIGWINCH, 0 };
@@ -125,7 +124,7 @@ extern char **environ;
  */
 
 static void _call_spank_fini(void);
-static int  _call_spank_local_user(srun_job_t *job, slurm_opt_t *opt_local);
+static int _call_spank_local_user(srun_job_t *job, slurm_opt_t *opt_local);
 static long _diff_tv_str(struct timeval *tv1, struct timeval *tv2);
 static void _handle_intr(srun_job_t *job);
 static void _handle_pipe(void);
