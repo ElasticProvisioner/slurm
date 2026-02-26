@@ -1,11 +1,7 @@
 /*****************************************************************************\
- *  src/srun/srun_pty.h - srun signal handling
+ *  signals.h - Signal handler logic for srun
  *****************************************************************************
- *  Copyright (C) 2002-2007 The Regents of the University of California.
- *  Copyright (C) 2008-2010 Lawrence Livermore National Security.
- *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
- *  Written by Moe Jette <jette@llnl.gov>.
- *  CODE-OCEC-09-009. All rights reserved.
+ *  Copyright (C) SchedMD LLC.
  *
  *  This file is part of Slurm, a resource management program.
  *  For details, see <https://slurm.schedmd.com/>.
@@ -37,14 +33,26 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
 \*****************************************************************************/
 
-#ifndef _SIGNALS_H
-#define _SIGNALS_H
+#ifndef _SRUN_SIGNALS_H
+#define _SRUN_SIGNALS_H
 
-#include "srun_job.h"
+/* Called only once at the beginning of the process */
+extern void srun_sig_init(void);
 
-typedef struct srun_job signal_job_t;
+/*
+ * If a signal comes in to destroy srun, this will be set to the signo used to
+ * destroy srun. Otherwise, this will be set to 0.
+ */
+extern int srun_destroy_sig;
+extern pthread_mutex_t srun_destroy_sig_lock;
 
-void pty_thread_create(srun_job_t *job);
-int set_winsize(int fd, srun_job_t *job);
+extern int srun_sig_eventfd;
 
-#endif /* !_SIGNALS_H */
+/*
+ * True if signals should be forwarded to running job. Otherwise, srun's
+ * internal signal handler will be used
+ */
+extern bool srun_sig_forward;
+extern pthread_mutex_t srun_sig_forward_lock;
+
+#endif /* _SRUN_SIGNALS_H */

@@ -3564,6 +3564,8 @@ extern int slurm_allocate_resources(job_desc_msg_t *job_desc_msg,
  *      the controller will put the job in the PENDING state.  If
  *      pending callback is not NULL, it will be called with the job_id
  *      of the pending job as the sole parameter.
+ * IN interrupt_fd - If data can be read from this fd (POLLIN), then this
+ *	function will immediately stop blocking and return.
  *
  * RET allocation structure on success, NULL on error set errno to
  *	indicate the error (errno will be ETIMEDOUT if the timeout is reached
@@ -3572,7 +3574,7 @@ extern int slurm_allocate_resources(job_desc_msg_t *job_desc_msg,
  */
 extern resource_allocation_response_msg_t *slurm_allocate_resources_blocking(
 	const job_desc_msg_t *user_req, time_t timeout,
-	void (*pending_callback)(slurm_step_id_t *step_id));
+	void (*pending_callback)(slurm_step_id_t *step_id), int interrupt_fd);
 
 /*
  * slurm_free_resource_allocation_response_msg - free slurm resource
@@ -3595,6 +3597,8 @@ extern void slurm_free_resource_allocation_response_msg(resource_allocation_resp
  *      the controller will put the job in the PENDING state.  If
  *      pending callback is not NULL, it will be called with the job_id
  *      of the pending job as the sole parameter.
+ * IN interrupt_fd - If data can be read from this fd (POLLIN), then this
+ *	function will immediately stop blocking and return.
  *
  * RET list of allocation structures on success, NULL on error set errno to
  *	indicate the error (errno will be ETIMEDOUT if the timeout is reached
@@ -3603,7 +3607,7 @@ extern void slurm_free_resource_allocation_response_msg(resource_allocation_resp
  */
 extern list_t *slurm_allocate_het_job_blocking(
 	list_t *job_req_list, time_t timeout,
-	void (*pending_callback)(slurm_step_id_t *step_id));
+	void (*pending_callback)(slurm_step_id_t *step_id), int interrupt_fd);
 
 /*
  * slurm_allocation_lookup - retrieve info for an existing resource
