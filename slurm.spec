@@ -113,7 +113,7 @@ BuildRequires: dbus-devel
 %endif
 
 %if %{with munge}
-Requires: munge
+Recommends: munge
 BuildRequires: munge-devel munge-libs
 %endif
 
